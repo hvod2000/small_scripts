@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -e
+target=$1
+t=$(mktemp -d)
+cp "$target" "$t/p.pas"
+[ -d "res" ] && (
+    cp res/* "$t";
+    cp -r res "$t/res";
+)
+cd "$t"
+fpc p.pas && clear && ./p && [ -d res ] && bash 
+rm -rf "$t"
