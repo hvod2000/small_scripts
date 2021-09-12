@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+
+for m in *.mp3; do
+    base="${m%.*}"
+    echo "$base"
+    ffmpeg -i "$m" "$base.opus" 2> /dev/null ||
+    ffmpeg -i "$m" "$base.opus"
+    rm "$m"
+done
