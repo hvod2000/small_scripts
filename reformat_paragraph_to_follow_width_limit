@@ -2,6 +2,7 @@
 
 from sys import stdin, argv
 
+SEPARATORS = '.!?:;'
 f = stdin
 limit = 80
 if len(argv) > 1:
@@ -21,9 +22,9 @@ source = " ".join(source)
 sentences, i, j = [], 0, 0
 while j < len(source):
     c = source[j]
-    if c in ".!?:;":
+    if c in SEPARATORS:
         k = j
-        while k < len(source) and source[k] in ".!?":
+        while k < len(source) and source[k] in SEPARATORS:
             k += 1
         sentences.append((source[i:j], source[j:k]))
         i = j = k + 1
