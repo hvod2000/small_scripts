@@ -2,10 +2,13 @@
 
 from sys import stdin, argv
 
-source = stdin
+f = stdin
 limit = 80
-file = source
-lines = iter(file.readlines())
+if len(argv) > 1:
+    limit = int(argv[1])
+if len(argv) > 2:
+    f = open(argv[2])
+lines = iter(f.readlines())
 indents, source = [], []
 try:
     while True:
