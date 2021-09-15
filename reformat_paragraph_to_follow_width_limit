@@ -1,14 +1,14 @@
 #!/bin/python3
 
 from sys import stdin, argv
+import codecs
 
 SEPARATORS = '.!?:;'
-f = stdin
-limit = 80
+f, limit = codecs.getreader('utf_8_sig')(stdin.buffer, errors='replace'), 80
 if len(argv) > 1:
     limit = int(argv[1])
 if len(argv) > 2:
-    f = open(argv[2])
+    f = open(argv[2], mode='r', encoding='utf_8_sig')
 lines = iter(f.readlines())
 indents, source = [], []
 try:
