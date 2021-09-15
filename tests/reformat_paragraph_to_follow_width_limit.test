@@ -1,0 +1,7 @@
+#!/bin/sh -ex
+
+[ "$(echo test | ../reformat_paragraph_to_follow_width_limit)" = test ]
+[ "$(echo юникод. | ../reformat_paragraph_to_follow_width_limit)" = юникод. ]
+[ "$(echo 't. e! s: t;' | ../reformat_paragraph_to_follow_width_limit 2)" \
+    = "$(printf "t.\ne!\ns:\nt;")" ]
+[ "$(echo 'A.F09;' | ../reformat_paragraph_to_follow_width_limit)" = 'A.F09;' ]
