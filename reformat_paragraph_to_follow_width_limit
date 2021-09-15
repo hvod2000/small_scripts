@@ -18,21 +18,14 @@ try:
         source.append(line.strip())
 except StopIteration:
     pass
-source = " ".join(source)
-sentences, i, j = [], 0, 0
-while j < len(source):
-    c = source[j]
-    if c in SEPARATORS:
-        k = j
-        while k < len(source) and source[k] in SEPARATORS:
-            k += 1
-        sentences.append((source[i:j], source[j:k]))
-        i = j = k + 1
-        continue
-    j += 1
-if j - 1 > i:
-    sentences.append((source[i:j], ""))
-sentences = list(map(lambda x: (x[0].strip() + x[1]).split(), sentences))
+source = sum(map(lambda x: x.split(), source), [])
+sentences = [[]]
+for word in source:
+    sentences[-1].append(word)
+    if word[-1] in SEPARATORS:
+        sentences.append([])
+if not sentences[-1]:
+    sentences.pop(-1)
 def iter_indents(indents):
     yield from indents
     while True:
