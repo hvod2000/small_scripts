@@ -2,6 +2,4 @@
 
 [ "$(echo test | ./text-wrapper)" = test ]
 [ "$(echo юникод. | ./text-wrapper)" = юникод. ]
-[ "$(echo 't. e! s: t;' | ./text-wrapper)" \
-    = "$(printf "t.\ne!\ns:\nt;")" ]
 [ "$(echo 'A.F09;' | ./text-wrapper)" = 'A.F09;' ]
