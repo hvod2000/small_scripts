@@ -1,0 +1,2 @@
+#!/bin/sh
+tmux split -dhbl 70 sage
