@@ -2,11 +2,19 @@
 
 from sys import stdin, argv
 import codecs
+from pathlib import Path
 
-f = codecs.getreader('utf_8_sig')(stdin.buffer, errors='replace')
-if len(argv) > 1:
-    f = open(argv[1], mode='r', encoding='utf_8_sig')
-lines = iter(f.readlines())
+def rstrip(path):
+    path = Path(path)
+    if path.is_file():
+        try:
+            text = path.read_text().split('\n')
+            path.write_text('\n'.join(l.rstrip() for l in text))
+        except UnicodeDecodeError as e:
+            print(f"{path} is not a plain text file.")
+    else:
+        for path in path.iterdir():
+            rstrip(path)
 
-for line in lines:
-    print(line.rstrip())
+for path in argv[1:]:
+    rstrip(path)
