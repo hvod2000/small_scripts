@@ -1,0 +1,12 @@
+#!/bin/python3
+
+from sys import stdin, argv
+import codecs
+
+f = codecs.getreader('utf_8_sig')(stdin.buffer, errors='replace')
+if len(argv) > 1:
+    f = open(argv[1], mode='r', encoding='utf_8_sig')
+lines = iter(f.readlines())
+
+for line in lines:
+    print(line.rstrip())
