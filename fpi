@@ -9,5 +9,5 @@ cp "$target" "$t/p.pas"
     cp -r res "$t/res";
 )
 cd "$t"
-fpc p.pas && clear && ./p && [ -d res ] && bash 
+fpc p.pas && clear && ./p && [ -d res ] && bash
 rm -rf "$t"
