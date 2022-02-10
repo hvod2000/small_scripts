@@ -1,0 +1,30 @@
+#!/bin/python3
+from hashlib import sha3_256 as shasum
+from tempfile import TemporaryDirectory
+from random import shuffle
+from pathlib import Path
+from shutil import move
+from sys import argv
+
+
+def shuffle_dir(path):
+    path = Path(path)
+    with TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        moved_items = {}
+        for item in path.iterdir():
+            temp_dest = tmp / shasum(repr(item).encode()).hexdigest()
+            moved_items[item] = temp_dest
+            move(item, temp_dest)
+        items = [(temp, orig) for orig, temp in moved_items.items()]
+        shuffle(items)
+        for temporary_destination, original in items:
+            move(temporary_destination, original)
+
+
+for path in argv[1:]:
+    path = Path(path)
+    if path.is_dir():
+        shuffle_dir(path)
+    else:
+        print(f"{path} is not a directory")
