@@ -1,0 +1,42 @@
+#!/bin/python3
+
+from sys import stdin, argv
+from pathlib import Path
+
+
+def count_start_spaces(line):
+    spaces = 0
+    while spaces < len(line) and line[spaces] == " ":
+        spaces += 1
+    return spaces
+
+
+def replace_first(line, old, new):
+    prefix = []
+    while line.startswith(old):
+        prefix.append(new)
+        line = line.replace(old, "", 1)
+    return "".join(prefix) + line
+
+
+def indent_lines(lines):
+    spaces = [s for s in map(count_start_spaces, lines) if s > 0]
+    current_indent = min(spaces, default=2)
+    return [replace_first(l, " " * current_indent, "\t") for l in lines]
+
+
+def indent_file_with_tabs(path):
+    path = Path(path)
+    if path.is_file():
+        try:
+            text = path.read_text().split("\n")
+            path.write_text("\n".join(indent_lines(text)))
+        except UnicodeDecodeError as e:
+            print(f"{path} is not a plain text file.")
+    else:
+        for path in path.iterdir():
+            indent_file_with_tabs(path)
+
+
+for path in argv[1:]:
+    indent_file_with_tabs(path)
