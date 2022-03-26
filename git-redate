@@ -1,0 +1,3 @@
+#!/bin/sh
+
+git rebase HEAD~$1 --exec "git commit --amend --no-edit --date '$2'"
