@@ -30,5 +30,8 @@ def indent_file(path, tab_size):
 
 
 tab_size = 8
-for path in argv[1:]:
-    indent_file(path, tab_size)
+for arg in argv[1:]:
+    if arg.startswith("tab_size="):
+        tab_size = int(arg.removeprefix("tab_size="))
+    else:
+        indent_file(arg, tab_size)
