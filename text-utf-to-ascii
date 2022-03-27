@@ -1,0 +1,31 @@
+#!/bin/python3
+
+from sys import stdin, argv
+from pathlib import Path
+
+
+def utf_to_ascii(text):
+    result = []
+    for char in text:
+        if ord(char) >= 128:
+            result.append(f"unicode_character_{ord(char)}")
+        else:
+            result.append(char)
+    return "".join(result)
+
+
+def handle(path):
+    path = Path(path)
+    if path.is_file():
+        try:
+            text = path.read_text()
+            path.write_text(utf_to_ascii(text))
+        except UnicodeDecodeError as e:
+            print(f"{path} is not a plain text file.")
+    else:
+        for path in path.iterdir():
+            rstrip(path)
+
+
+for path in argv[1:]:
+    handle(path)
