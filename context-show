@@ -1,0 +1,5 @@
+#!/bin/sh
+
+source=$1
+target=$(basename "$source" .tex).pdf
+context "$source" && zathura "$target"
