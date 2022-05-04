@@ -1,0 +1,8 @@
+#!/bin/sh
+for rep in *; do
+	cd "./$rep" 2> /dev/null || continue
+	test -z "$(git status -s)" && cd .. && continue
+	printf -- "%8s%-50s\n" " " "$rep" | tr " " "-"
+	git status -s
+	cd ..
+done
