@@ -14,6 +14,6 @@ if not isinstance(lst[0], list):
     target = '"' + list2hex(lst) + '"'
 else:
     content = "\n".join("    " + list2hex(lst) for lst in lst)
-    target = 'map(lambda r: [int(r[i:i+2], 16) for i in range(0, len(r), 2)], '
-    target += '\n"""\n' + content + '\n""".strip().split())'
+    target = '[[int(r[i:i+2], 16) for i in range(0, len(r), 2)] for r in ('
+    target += '\n"""\n' + content + '\n""".strip().split())]\n'
 Path(argv[-1]).write_text(target)
