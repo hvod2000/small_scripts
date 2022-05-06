@@ -1,0 +1,18 @@
+#!/bin/python3
+
+from sys import stdin, argv
+from ast import literal_eval
+from pathlib import Path
+
+
+def list2hex(lst):
+    return "".join(hex(numb)[2:].zfill(2) for numb in lst)
+
+
+lst = literal_eval(Path(argv[1]).read_text())
+if not isinstance(lst[0], list):
+    target = '"' + list2hex(lst) + '"'
+else:
+    content = "\n".join("    " + list2hex(lst) for lst in lst)
+    target = '"""\n' + content + '\n""".strip().split()'
+Path(argv[-1]).write_text(target)
