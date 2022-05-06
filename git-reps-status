@@ -6,7 +6,8 @@ for rep in *; do
 		cd .. && continue
 	[[ "$updated" == *"up to date"* ]] &&
 		printf "%8s%-50s\n" " " "$rep" | tr " " "-" ||
-		printf "[LOCAL] %-50s\n" "$rep" | tr " " "-"
+		printf "%8s%-38s-[\E[0;31mUNPUSHED\E[0m]-\n" \
+			" " "$rep" | tr " " "-"
 	git status -s
 	cd ..
 done
