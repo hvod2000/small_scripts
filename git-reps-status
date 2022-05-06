@@ -1,13 +1,9 @@
-#!/bin/sh
+#!/bin/sh -e
 for rep in *; do
-	cd "./$rep" 2> /dev/null || continue
-	updated=$(git status | head -n2)
-	[[ "$updated" == *"up to date"* ]] && test -z "$(git status -s)" &&
-		cd .. && continue
-	[[ "$updated" == *"up to date"* ]] &&
-		printf "%8s%-50s\n" " " "$rep" | tr " " "-" ||
-		printf "%8s%-38s-[\E[0;31mUNPUSHED\E[0m]-\n" \
-			" " "$rep" | tr " " "-"
-	git status -s
-	cd ..
+	cd "./$rep" 2>/dev/null || continue
+	pushed=$(git status | head -n2 | grep -q "up to date" && echo T || true)
+	[ $pushed ] && test -z "$(git status -s)" && cd .. && continue
+	[ $pushed ] && printf "%8s%-50s\n" " " "$rep" | tr " " "-" ||
+		printf "%8s%-38s-[\E[0;31mUNPUSHED\E[0m]-\n" - "$rep" | tr " " -
+	git status -s && cd ..
 done
