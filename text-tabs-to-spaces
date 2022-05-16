@@ -13,7 +13,7 @@ def replace_first(line, old, new):
 
 
 def indent_lines(lines, tab_size):
-    return [replace_first(l, "\t", " "*tab_size) for l in lines]
+    return [replace_first(l, "\t", " " * tab_size) for l in lines]
 
 
 def indent_file(path, tab_size):

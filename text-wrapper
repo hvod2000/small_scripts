@@ -3,12 +3,12 @@
 from sys import stdin, argv
 import codecs
 
-SEPARATORS = '.!?:;'
-f, limit = codecs.getreader('utf_8_sig')(stdin.buffer, errors='replace'), 80
+SEPARATORS = ".!?:;"
+f, limit = codecs.getreader("utf_8_sig")(stdin.buffer, errors="replace"), 80
 if len(argv) > 1:
     limit = int(argv[1])
 if len(argv) > 2:
-    f = open(argv[2], mode='r', encoding='utf_8_sig')
+    f = open(argv[2], mode="r", encoding="utf_8_sig")
 lines = iter(f.readlines())
 indents, source = [], []
 try:
@@ -26,10 +26,14 @@ for word in source:
         sentences.append([])
 if not sentences[-1]:
     sentences.pop(-1)
+
+
 def iter_indents(indents):
     yield from indents
     while True:
         yield indents[-1]
+
+
 target = []
 for indent in iter_indents(indents):
     if not sentences:
@@ -42,7 +46,8 @@ for indent in iter_indents(indents):
                 len(sentences) < 2
                 or len(target[-1])
                 + sum(map(lambda x: len(x), sentences[1]))
-                + len(sentences[1]) > limit
+                + len(sentences[1])
+                > limit
             ):
                 break
         elif len(sentences[0][0]) + len(target[-1]) < limit:

@@ -1,10 +1,15 @@
 #!/bin/python3
 import sys
 from random import choice
-available_chars = set(range(256)) - {0, ord('/')}
+
+available_chars = set(range(256)) - {0, ord("/")}
+
+
 def get_random_file_name(length):
-    chars, candidate = list(available_chars), b'.'
-    while candidate in (b'.', b'..'):
+    chars, candidate = list(available_chars), b"."
+    while candidate in (b".", b".."):
         candidate = bytes(choice(chars) for _ in range(length))
     return candidate
-open(get_random_file_name(int(sys.argv[1])), 'wb')
+
+
+open(get_random_file_name(int(sys.argv[1])), "wb")

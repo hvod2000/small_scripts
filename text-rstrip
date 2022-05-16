@@ -4,17 +4,19 @@ from sys import stdin, argv
 import codecs
 from pathlib import Path
 
+
 def rstrip(path):
     path = Path(path)
     if path.is_file():
         try:
-            text = path.read_text().split('\n')
-            path.write_text('\n'.join(l.rstrip() for l in text))
+            text = path.read_text().split("\n")
+            path.write_text("\n".join(l.rstrip() for l in text))
         except UnicodeDecodeError as e:
             print(f"{path} is not a plain text file.")
     else:
         for path in path.iterdir():
             rstrip(path)
+
 
 for path in argv[1:]:
     rstrip(path)
