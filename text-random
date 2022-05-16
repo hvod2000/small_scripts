@@ -1,8 +1,8 @@
 #!/bin/python3
 
-from sys import stdin, argv
 from random import choice, randint
 from string import ascii_letters, digits, punctuation
+from sys import argv, stdin
 
 
 def random_word(length):

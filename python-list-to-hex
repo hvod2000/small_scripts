@@ -1,8 +1,8 @@
 #!/bin/python3
 
-from sys import stdin, argv
 from ast import literal_eval
 from pathlib import Path
+from sys import argv, stdin
 
 
 def list2hex(lst):

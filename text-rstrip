@@ -1,8 +1,8 @@
 #!/bin/python3
 
-from sys import stdin, argv
 import codecs
 from pathlib import Path
+from sys import argv, stdin
 
 
 def rstrip(path):
