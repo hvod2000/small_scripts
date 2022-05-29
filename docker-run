@@ -1,0 +1,13 @@
+#!/bin/sh
+
+target=$1
+case "$target" in
+"sage")
+	docker run -itv "$(pwd)":/home/sage/storage -p8888:8888 \
+		sagemath/sagemath:latest sage-jupyter \
+		--NotebookApp.token='' --NotebookApp.password=''
+	;;
+*)
+	printf 'Unknown target: "%s"\n' "$target"
+	;;
+esac
