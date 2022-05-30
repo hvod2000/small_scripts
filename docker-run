@@ -3,11 +3,13 @@
 target=$1
 case "$target" in
 "sage")
+	sleep 0.5 && xdg-open "http://localhost" &
 	docker run -itv "$(pwd)":/home/sage/storage -p80:8888 \
 		sagemath/sagemath:latest sage-jupyter \
 		--NotebookApp.token='' --NotebookApp.password=''
 	;;
 *)
 	printf 'Unknown target: "%s"\n' "$target"
+	exit 2
 	;;
 esac
