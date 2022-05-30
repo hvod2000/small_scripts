@@ -1,0 +1,37 @@
+#!/usr/bin/env python3
+
+import codecs
+import json
+from pathlib import Path
+from sys import argv, stdin
+
+
+def strip_notebook(notebook):
+    execution_count = 0
+    for cell in notebook["cells"]:
+        if "execution_count" in cell and cell["execution_count"] != None:
+            execution_count += 1
+            cell["execution_count"] = execution_count
+        if "id" in cell:
+            del cell["id"]
+
+
+def rstrip(path):
+    path = Path(path)
+    if path.is_file() and path.suffix == ".ipynb":
+        print("strip", path)
+        try:
+            notebook = json.loads(path.read_text())
+            strip_notebook(notebook)
+            path.write_text(
+                json.dumps(notebook, indent=1, ensure_ascii=False) + "\n"
+            )
+        except UnicodeDecodeError as e:
+            print(f"{path} is not a plain text file.")
+    elif path.is_dir():
+        for path in path.iterdir():
+            rstrip(path)
+
+
+for path in argv[1:]:
+    rstrip(path)
