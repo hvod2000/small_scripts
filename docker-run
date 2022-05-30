@@ -3,7 +3,7 @@
 target=$1
 case "$target" in
 "sage")
-	docker run -itv "$(pwd)":/home/sage/storage -p8888:8888 \
+	docker run -itv "$(pwd)":/home/sage/storage -p80:8888 \
 		sagemath/sagemath:latest sage-jupyter \
 		--NotebookApp.token='' --NotebookApp.password=''
 	;;
