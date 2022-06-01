@@ -1,9 +1,12 @@
 #!/bin/sh -e
-for rep in *; do
-	cd "./$rep" 2>/dev/null || continue
-	pushed=$(git status | head -n2 | grep -q "up to date" && echo T || true)
-	[ $pushed ] && test -z "$(git status -s)" && cd .. && continue
-	[ $pushed ] && printf "%8s%-50s\n" " " "$rep" | tr " " "-" ||
+for rep in *; do (
+	cd "./$rep" 2>/dev/null && [ -d .git ] || exit 0
+	pushed=$(git status | head -n2 | grep -q "up to date" && echo true)
+	if [ "$pushed" ]; then
+		test -z "$(git status -s)" && exit 0
+		printf "%8s%-50s\n" " " "$rep" | tr " " "-" && git status -s
+	else
 		printf "%8s%-38s-[\E[0;31mUNPUSHED\E[0m]-\n" - "$rep" | tr " " -
-	git status -s && cd ..
-done
+		test -z "$(git status -s)" && git status || git status -s
+	fi
+) || true; done
