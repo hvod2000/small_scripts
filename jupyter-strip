@@ -12,6 +12,9 @@ def strip_notebook(notebook):
         if "execution_count" in cell and cell["execution_count"] != None:
             execution_count += 1
             cell["execution_count"] = execution_count
+            for output in cell.get("outputs", {}):
+                if "execution_count" in output:
+                    output["execution_count"] = execution_count
         if "id" in cell:
             del cell["id"]
 
