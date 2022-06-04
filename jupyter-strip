@@ -6,11 +6,14 @@ from pathlib import Path
 from sys import argv, stdin
 
 
-def strip_notebook(notebook):
+def strip_notebook(notebook, numerate_cells=True):
     execution_count = 0
     for cell in notebook["cells"]:
         if "execution_count" in cell and cell["execution_count"] != None:
-            execution_count += 1
+            if numerate_cells:
+                execution_count += 1
+            else:
+                execution_count = None
             cell["execution_count"] = execution_count
             for output in cell.get("outputs", {}):
                 if "execution_count" in output:
@@ -25,7 +28,7 @@ def rstrip(path):
         print("strip", path)
         try:
             notebook = json.loads(path.read_text())
-            strip_notebook(notebook)
+            strip_notebook(notebook, numerate_cells=False)
             path.write_text(
                 json.dumps(notebook, indent=1, ensure_ascii=False) + "\n"
             )
