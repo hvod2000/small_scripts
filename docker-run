@@ -8,6 +8,10 @@ case "$target" in
 		sagemath/sagemath:latest sage-jupyter \
 		--NotebookApp.token='' --NotebookApp.password=''
 	;;
+"jupyter")
+	sleep 0.5 && xdg-open "http://localhost" &
+	docker run -itv "$(pwd)":/data -p80:80 hvod/jupyter:latest
+	;;
 *)
 	printf 'Unknown target: "%s"\n' "$target"
 	exit 2
