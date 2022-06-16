@@ -10,7 +10,7 @@ case "$target" in
 	;;
 "jupyter")
 	sleep 0.5 && xdg-open "http://localhost" &
-	docker run -itv "$(pwd)":/data -p80:80 hvod/jupyter:latest
+	docker run -itv "$(pwd)":/data -p80:8080 hvod/jupyter:latest
 	;;
 *)
 	printf 'Unknown target: "%s"\n' "$target"
