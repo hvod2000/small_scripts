@@ -1,0 +1,13 @@
+#!/bin/sh
+
+monitor=$(xrandr | grep " connected " | cut -d' ' -f1 | head -n1)
+mode=$(xrandr | awk '/*/ {print $1}')
+trap 'sleep 1; xrandr --output "$monitor" --mode "$mode"; trap - EXIT; exit' EXIT INT HUP TERM QUIT SIGINT
+(
+	xrandr --output "$monitor" --mode "1024x768"
+	sleep 5
+	xprop -name 'Eador. Genesis' -f _MOTIF_WM_HINTS 32c -set _MOTIF_WM_HINTS "0x2, 0x0, 0x0, 0x0, 0x0"
+	xdotool search --name '^Eador. Genesis$' windowmove 0 0
+) & [ -f eador ] && ( ./eador || true) \
+ || [ -f ~/apps/genesis/eador ] && ( cd ~/apps/genesis && ./eador || true )
+exit
