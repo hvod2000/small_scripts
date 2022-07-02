@@ -1,0 +1,21 @@
+#!/bin/sh -e
+
+if [ -n "${1+x}" ]; then
+	src=$1
+else
+	echo "You haven't specified what to render"
+	exit 42
+fi
+
+if [ -n "${2+x}" ]; then
+	target=$2
+else
+	target="${src%.*}.png"
+fi
+
+tmp="$(</dev/random head -c2048 | sha256sum | base64 | head -c32)"
+scp "$src" "$BLENDER_PROVIDER:/tmp/$tmp.blend"
+ssh -t "$BLENDER_PROVIDER" blender -b "/tmp/$tmp.blend" -o "/tmp/${tmp}##.png" -E CYCLES -f 42
+scp "$BLENDER_PROVIDER:/tmp/${tmp}42.png" "$tmp.png"
+mv "$tmp.png" "$target"
+echo "the result have been saved into $target file"
