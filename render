@@ -1,0 +1,22 @@
+#!/bin/sh -e
+
+if [ -n "${1+x}" ]; then
+	src=$1
+else
+	echo "You haven't specified what to render"
+	exit 42
+fi
+
+if [ -n "${2+x}" ]; then
+	target=$2
+else
+	target="${src%.*}.png"
+fi
+
+echo generating tmwp
+tmp="$(</dev/random head -c2048 | sha256sum | base64 | head -c32)"
+echo starting
+blender -b "$src" -o "/tmp/${tmp}##.png" -E CYCLES -f 42
+cp "/tmp/${tmp}42.png" "$target"
+echo " --------------------------------------------"
+echo " the result have been saved into $target file"
