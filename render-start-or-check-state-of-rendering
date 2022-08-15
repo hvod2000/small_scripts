@@ -34,7 +34,7 @@ start_rendering() (
 	cp -- "$SRC_BLEND" "$id.blend"
 	( blender -b "$id.blend" -o "$id##.png" -E $ENGINE -f 85 && mv "${id}85.png" "${id}.png" ) > "$id.log" 2>&1 &
 	render_pid=$!
-        # TODO: support remote host
+	# TODO: support remote host
 	host=localhost
 	printf "%s\n%s\n" $host $render_pid | tee "$id.desc"
 )
