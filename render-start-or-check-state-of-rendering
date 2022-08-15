@@ -1,0 +1,78 @@
+#!/bin/sh -e
+
+# TODO: support target as second argument
+if [ $# -ne 1 ]; then
+	# TODO: more elegant pring of usage manual
+	echo "USAGE:"
+	# TODO: add more detailed explanation
+	echo "  $0 source_blender_file"
+	# TODO: use error code for usage error
+	exit 123
+fi
+SRC_BLEND=$1
+ENGINE=CYCLES # CYCLES or BLENDER_EEVEE
+
+
+get_blender_file_id() (
+	src_blend=$1
+	src_hash=$(sha256sum "$src_blend" | cut -d " " -f1)
+	# TODO: find more elegant why to get path to the cache home
+	if [ -d "$XDG_CACHE_HOME" ]; then
+		storage=$XDG_CACHE_HOME
+	else
+		storage=$HOME/.cache
+	fi
+	storage=$storage/blender-renders
+	mkdir -p "$storage"
+	id=$storage/$src_hash
+	echo "$id"
+)
+
+
+start_rendering() (
+	id=$1
+	cp -- "$SRC_BLEND" "$id.blend"
+	( blender -b "$id.blend" -o "$id##.png" -E $ENGINE -f 85 && mv "${id}85.png" "${id}.png" ) > "$id.log" 2>&1 &
+	render_pid=$!
+        # TODO: support remote host
+	host=localhost
+	printf "%s\n%s\n" $host $render_pid | tee "$id.desc"
+)
+
+
+check_rendering() (
+	id=$1
+	# TODO: find more elegant way to return constant
+	if [ -f "$id.png" ]; then
+		echo done
+		return 0
+	fi
+	[ -f "$id.desc" ] || return 1
+	{ read host && read render_pid; } < $id.desc
+	# currently assume host="localhost"
+	# TODO: support nonlocal host
+	progress=$(tail -1 "$id.log")
+	# TODO: don't assume pid not being reused
+	# TODO: use OS-independent way to check if process is alive
+	ps -p $render_pid > /dev/null 2>&1 || return 1
+	echo $progress
+)
+
+
+id=$(get_blender_file_id "$SRC_BLEND")
+if read progress < <(check_rendering $id); then
+	echo current progress: $progress
+	if [ done == "$progress" ]; then
+		# TODO: print what is id and why it is printed
+		echo ${id}.png
+		# TODO: support copying the result into target destination
+	fi
+	# TODO: find out the correct way to exit: "return" or "exit"
+	exit 0 # return 0
+else
+	# TODO: write code that I understand
+	{ read host && read render_id; } < <(start_rendering $source_id)
+	echo "Just started rendering by $host:$render_id"
+fi
+# TODO: support running until rendering is done
+return 0
