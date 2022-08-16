@@ -67,12 +67,9 @@ if read progress < <(check_rendering $id); then
 		echo ${id}.png
 		# TODO: support copying the result into target destination
 	fi
-	# TODO: find out the correct way to exit: "return" or "exit"
-	exit 0 # return 0
 else
 	# TODO: write code that I understand
 	{ read host && read render_id; } < <(start_rendering $source_id)
 	echo "Just started rendering by $host:$render_id"
 fi
 # TODO: support running until rendering is done
-return 0
