@@ -69,7 +69,7 @@ if read progress < <(check_rendering $id); then
 	fi
 else
 	# TODO: write code that I understand
-	{ read host && read render_id; } < <(start_rendering $source_id)
+	{ read host && read render_id; } < <(start_rendering $id)
 	echo "Just started rendering by $host:$render_id"
 fi
 # TODO: support running until rendering is done
