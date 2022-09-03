@@ -6,7 +6,7 @@ for rep in *; do (
 		test -z "$(git status -s)" && exit 0
 		printf "%8s%-50s\n" " " "$rep" | tr " " "-" && git status -s
 	else
-		printf "%8s%-38s-[\E[0;31mUNPUSHED\E[0m]-\n" - "$rep" | tr " " -
+		printf '%8s%-38s-[\e[0;31mUNPUSHED\e[0m]-\n' - "$rep" | tr " " -
 		test -z "$(git status -s)" && git status || git status -s
 	fi
 ) || true; done
