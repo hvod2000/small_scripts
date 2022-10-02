@@ -1,5 +1,5 @@
 #!/bin/sh
-USERNAME=hvod2000
+USERNAME=hvox
 curl "https://api.github.com/users/$USERNAME/repos?per_page=100" |
   jq 'map(select(.fork == false and .name != "gitbomb")) | .[] | .ssh_url' -r |
   xargs -L1 -P100 git clone

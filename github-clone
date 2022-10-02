@@ -1,4 +1,4 @@
 #!/bin/sh
-USERNAME=hvod2000
+USERNAME=hvox
 repo=$1
 git clone "git@github.com:$USERNAME/$repo.git"
