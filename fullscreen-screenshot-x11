@@ -1,0 +1,7 @@
+#!/bin/sh -e
+app=$(xdotool getactivewindow getwindowname)
+time=$(date +"%d.%m.%y-%T:%3N")
+path=/Pictures/Screenshots/$app/$time.png
+path=~/Pictures/Screenshots/$(echo "$app" | sed -e "s@/@╱@g")/$time.png
+mkdir -p "$(dirname "$path")"
+imlib2_grab "$path"
