@@ -1,0 +1,12 @@
+#!/bin/sh -e
+
+filename=$1
+package=${filename%.*}
+mkdir -p "$package/src"
+mv "$filename" "$package/src/main.rs"
+tee "$package/Cargo.toml" <<-EOF >/dev/null
+	[package]
+	name = "$package"
+	version = "0.1.0"
+	edition = "2021"
+EOF

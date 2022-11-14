@@ -1,0 +1,5 @@
+#!/bin/sh -e
+
+package=$(realpath -s "$1")
+mv "$package/src/main.rs" "$package.rs"
+rm "$package" -r
