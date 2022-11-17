@@ -1,0 +1,78 @@
+#!/usr/bin/env python
+r"""
+Usage:
+    compile-snippets <source>
+    compile-snippets -h | --help
+
+Options:
+    -h --help        Show this screen.
+
+Examples:
+    compile-snippets hello_world.py
+"""
+from string import punctuation, whitespace
+from itertools import groupby
+from pathlib import Path
+
+
+def str_to_json(string: str) -> str:
+    escaping = {"\\": "\\\\", '"': '\\"'}
+    return '"' + "".join(escaping.get(char, char) for char in string) + '"'
+
+
+def parse_code(source):
+    return [
+        "".join(word) for _, word in
+        groupby(source, lambda char: (char in punctuation) - (char in whitespace))
+    ]
+
+
+def parse_snippets(source: str) -> tuple[str, list[str], list[str]]:
+    i, source_lines = 0, list(source.split("\n"))
+    while i < len(source_lines):
+        if not source_lines[i].startswith("# :") or len(source_lines[i]) == 3:
+            i += 1
+            continue
+        line = source_lines[i].removeprefix("# :")
+        if "(" in line and ")" in line:
+            name, args = line.removesuffix(")").split("(", 1)
+            args = list(args.split(", "))
+        else:
+            name, args = line, []
+        j = i + 1
+        while j < len(source_lines) and not source_lines[j].startswith("# :"):
+            j += 1
+        yield (name, args, source_lines[i + 1: j])
+        i = j
+
+
+def snippet_to_json(name: str, variables: list[str], source: list[str]) -> str:
+    result = []
+    result.append(f'"{name}": ' + "{")
+    result.append(f'  "prefix": "{name}",')
+    result.append('  "body": [')
+    lookup = {var: "${" + str(i) + ":" + var + "}" for i, var in enumerate(variables, 1)}
+    for tokens in map(parse_code, source):
+        line = "".join(lookup.get(token, token) for token in tokens)
+        result.append(f"    {str_to_json(line)},")
+    result[-1] = result[-1].removesuffix(",")
+    result.append("  ]")
+    result.append("},")
+    return "\n".join(result)
+
+
+def main(source_path: str):
+    lines = []
+    for snippet in parse_snippets(Path(source_path).read_text()):
+        lines.extend(snippet_to_json(*snippet).split("\n"))
+    if lines:
+        lines[-1] = lines[-1].removesuffix(",")
+    print("{")
+    for line in lines:
+        print(" ", line)
+    print("}")
+
+
+if __name__ == "__main__":
+    args = __import__("docopt").docopt(__doc__)
+    main(source_path=args["<source>"])
