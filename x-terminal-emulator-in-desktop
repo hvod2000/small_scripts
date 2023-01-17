@@ -1,0 +1,4 @@
+#!/bin/sh
+
+cd "$(xdg-user-dir DESKTOP)" || true
+exec x-terminal-emulator
