@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -e
+target=$1
+if [ -x "$target" ]; then
+	"./$(realpath --relative-to="${PWD}" "$target")"
+else
+	case "${target##*.}" in
+		py) python3 "$target";;
+		rb) ruby "$target";;
+		c) gcc "$target" -o a.out && ./a.out;;
+		*) echo wtf is "$target";;
+	esac
+fi
