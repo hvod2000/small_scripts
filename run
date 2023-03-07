@@ -1,14 +1,42 @@
-#!/bin/bash
+#!/usr/bin/env python3
 
-set -e
-target=$1
-if [ -x "$target" ]; then
-	"./$(realpath --relative-to="${PWD}" "$target")"
-else
-	case "${target##*.}" in
-		py) python3 "$target";;
-		rb) ruby "$target";;
-		c) gcc "$target" -o a.out && ./a.out;;
-		*) echo wtf is "$target";;
-	esac
-fi
+import sys
+import stat
+import subprocess
+from pathlib import Path
+
+
+def run(cmd: list):
+    return subprocess.run(list(map(str, cmd))).returncode == 0
+
+
+SUFFIXES = {
+    "clj": lambda path, args: run(["clojure", path] + args),
+    "py": lambda path, args: run(["python3", path] + args),
+    "rb": lambda path, args: run(["ruby", path] + args),
+    "js": lambda path, args: run(["node", path] + args),
+    "cpp": lambda path, args: run(["g++", "-o", path.with_suffix(""), path]) and
+                              run([path.with_suffix("")] + args),
+    "c": lambda path, args: run(["gcc", "-o", path.with_suffix(""), path]) and
+                            run([path.with_suffix("")] + args),
+}
+
+
+def main(args):
+    app, *arguments = args
+    path = Path(app)
+    if path.stat().st_mode & stat.S_IXUSR:
+        run([path] + arguments)
+        return
+    shebang = (path.read_text().split("\n") or [""])[0]
+    if shebang.startswith("#!/"):
+        run(shebang.removeprefix("#!").split(" ", 1) + [path])
+        return
+    if f := SUFFIXES.get(path.suffix.strip(".")):
+        f(path, arguments)
+        return
+    print(f"I don't know how to run {path}", file=sys.stderr)
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
