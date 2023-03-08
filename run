@@ -30,7 +30,7 @@ def main(args):
         return
     shebang = (path.read_text().split("\n") or [""])[0]
     if shebang.startswith("#!/"):
-        run(shebang.removeprefix("#!").split(" ", 1) + [path])
+        run(shebang.removeprefix("#!").split(" ", 1) + [path] + arguments)
         return
     if f := SUFFIXES.get(path.suffix.strip(".")):
         f(path, arguments)
