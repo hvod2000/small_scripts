@@ -7,7 +7,8 @@ from pathlib import Path
 
 
 def run(cmd: list):
-    return subprocess.run(list(map(str, cmd))).returncode == 0
+    args = [cmd[0].resolve() if isinstance(cmd[0], Path) else cmd[0]] + cmd[1:]
+    return subprocess.run(list(map(str, args))).returncode == 0
 
 
 SUFFIXES = {
