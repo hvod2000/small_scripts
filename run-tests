@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+from pathlib import Path
+
+
+def main(args):
+    app, *tests = args
+    if not tests:
+        tests = [app + ".tests"]
+    for test_dir in tests:
+        test_files = list(sorted(Path(test_dir).iterdir()))
+        plain_tests = [f.with_suffix("") for f in test_files if f.suffix == ".in"]
+        for test_name in plain_tests:
+            input_file = f"{test_name}.in"
+            output_file = f"{test_name}.out"
+            shell_cmd = (
+                f"cat {input_file!r} | run {app!r} | sha256sum && "
+                f"cat {output_file!r} | sed 's/\\r//g' - | sha256sum"
+            )
+            print(f"> {shell_cmd}")
+            if error_code := os.system(shell_cmd):
+                exit(error_code)
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
