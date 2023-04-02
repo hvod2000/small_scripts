@@ -1,0 +1,4 @@
+#!/bin/sh
+
+ip=$(curl ipecho.net/plain 2> /dev/null)
+printf "Your IPv4 is %s\n" "$ip"
