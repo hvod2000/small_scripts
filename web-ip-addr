@@ -1,4 +1,9 @@
 #!/bin/sh
 
-ip=$(curl ipecho.net/plain 2> /dev/null)
-printf "Your IPv4 is %s\n" "$ip"
+# ip=$(curl ipecho.net/plain 2> /dev/null)
+ipv4=$(curl --ipv4 kiologyn.com/givemyip 2> /dev/null)
+[ -z "$ipv4" ] && ipv4="not available"
+ipv6=$(curl --ipv6 kiologyn.com/givemyip 2> /dev/null)
+[ -z "$ipv6" ] && ipv6="not available"
+printf "Your IPv4 is %s\n" "$ipv4"
+printf "     IPv6 is %s\n" "$ipv6"
