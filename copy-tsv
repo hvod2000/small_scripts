@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+"""
+Copy formated TSV-table to the system clipboard.
+
+Usage: {script} [options] [PATH]
+
+Options:
+   -h, --help   Show this screen and exit.
+   --verbose    Raise verbosity level.
+
+Arguments:
+    PATH        Path to the TSV file. If omitted, stdin will be used.
+"""
+import sys
+from pathlib import Path
+from typing import Any, Callable
+from base64 import b64encode
+
+debug: Callable[..., None]
+noop: Any = lambda *args, **kwargs: None
+
+
+def table_to_str(table: list[list[str]]) -> str:
+    if not table or not table[0]:
+        return ""
+    column_widths = [0] * len(table[0])
+    for row in table:
+        for i, cell in enumerate(row):
+            column_widths[i] = max(column_widths[i], len(cell))
+    lines = []
+    for i, row in enumerate(table):
+        line = []
+        for cell, width in zip(row, column_widths):
+            line.append(cell.ljust(width))
+        lines.append(" " + "  ".join(line))
+    return "\n".join(lines)
+
+
+def parse_cells(tsv: str) -> list[list[str]]:
+    rows = []
+    for line in tsv.strip("\n").split("\n"):
+        rows.append(line.split("\t"))
+    return rows
+
+
+def main(script_name: str, *script_args: str):
+    global debug
+    doc = __doc__.format(script=Path(script_name).name)
+    args = __import__("docopt").docopt(doc, script_args)
+    debug = print if args["--verbose"] else noop
+    debug(f"Running with arguments {dict(args)!r}")
+    tsv = Path(args["PATH"]).read_text() if args["PATH"] else open(0).read()
+    string = table_to_str(parse_cells(tsv))
+    debug(string)
+    print("\x1b]52;c;" + b64encode(string.encode("utf-8")).decode("utf-8"), end="\a")
+
+
+if __name__ == "__main__":
+    main(*sys.argv)
