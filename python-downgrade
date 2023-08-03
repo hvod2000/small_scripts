@@ -1,0 +1,96 @@
+#!/usr/bin/env python3
+"""
+Downgrade specified script to Python 3.4 from modern Python.
+
+Usage: {script} [options] SOURCE TARGET
+
+Options:
+   -h, --help   Show this screen and exit.
+   --verbose    Raise verbosity level.
+
+Arguments:
+    SOURCE      Original script to be downgraded.
+    TARGET      Destination of generated script
+"""
+import sys
+from pathlib import Path
+from typing import Any, Callable
+
+
+PATH_SOURCE = """class Path:
+    def __init__(self, path):
+        self.path = path.path if isinstance(path, Path) else path
+
+    def __str__(self):
+        return self.path
+
+    def is_file(self):
+        return __import__("pathlib").Path(self.path).is_file()
+
+    def is_dir(self):
+        return __import__("pathlib").Path(self.path).is_dir()
+
+    @property
+    def suffix(self):
+        return __import__("pathlib").Path(self.path).suffix
+
+    def write_text(self, text: str):
+        with open(self.path, "wt") as file:
+            file.write(text)
+
+    def read_text(self):
+        with open(self.path, "rt") as file:
+            text = file.readlines()
+        return "\\n".join(text) + "\\n"
+
+    def iterdir(self):
+        return __import__("pathlib").Path(self.path).iterdir()
+
+    def open(self, mode):
+        return __import__("pathlib").Path(self.path).open(mode)"""
+
+
+debug: Callable[..., None]
+noop: Any = lambda *args, **kwargs: None
+
+
+def fstring_to_exp(fstring: str) -> str:
+    i, result, string = 0, [], fstring[2:-1]
+    while string.find("{", i) != -1:
+        j = string.index("{", i)
+        result.append(f'"{string[i:j]}"')
+        i = string.index("}", j) + 1
+        code = string[j + 1: i - 1]
+        if code.endswith("!s"):
+            code = f"str({code[:-2]})"
+        elif code.endswith("!r"):
+            code = f"repr({code[:-2]})"
+        else:
+            code = f"str({code})"
+        result.append(code)
+    if i < len(string):
+        result.append(f'"{string[i:]}"')
+    return "(" + " + ".join(result) + ")"
+
+
+def main(script_name: str, *script_args: str):
+    global debug
+    doc = __doc__.format(script=Path(script_name).name)
+    args = __import__("docopt").docopt(doc, script_args)
+    debug = print if args["--verbose"] else noop
+    debug(f"Running with arguments {dict(args)!r}")
+    lines = Path(args["SOURCE"]).read_text().strip("\n").split("\n")
+    insertion_position = int(lines[0].startswith("#!/"))
+    if any(x.strip().startswith("from pathlib import Path") for x in lines):
+        lines = [x for x in lines if not x.strip().startswith("from pathlib import Path")]
+        lines[insertion_position:insertion_position] = PATH_SOURCE.split("\n")
+    for k, line in enumerate(lines):
+        if (i := line.find('f"')) != -1 and (j := line.index('"', i + 2)) != -1:
+            line = line[:i] + fstring_to_exp(line[i: j + 1]) + line[j + 1:]
+            lines[k] = line
+
+    Path(args["TARGET"]).write_text("".join(line + "\n" for line in lines))
+
+
+if __name__ == "__main__":
+    main(*sys.argv)
