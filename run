@@ -8,7 +8,11 @@ from pathlib import Path
 
 def run(cmd: list):
     args = [cmd[0].resolve() if isinstance(cmd[0], Path) else cmd[0]] + cmd[1:]
-    return subprocess.run(list(map(str, args))).returncode == 0
+    # if sys.stderr.isatty():
+    #     print("\x1b[0;36m> " + " ".join(map(str, args)) + "\x1b[0m", file=sys.stderr)
+    if code := subprocess.run(list(map(str, args))).returncode:
+        exit(code)
+    return True
 
 
 SUFFIXES = {
@@ -20,6 +24,10 @@ SUFFIXES = {
                               run([path.with_suffix("")] + args),
     "c": lambda path, args: run(["gcc", "-o", path.with_suffix(""), path]) and
                             run([path.with_suffix("")] + args),
+    "asm": lambda path, args:
+        run(["yasm", "-gdwarf2", "-felf64", path, f"-l{path.with_suffix('')}"]) and
+        run(["ld", "-g", "-o", path.with_suffix(""), path.with_suffix(".o")]) and
+        run([path.with_suffix("")] + args)
 }
 
 
@@ -40,4 +48,7 @@ def main(args):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    try:
+        main(sys.argv[1:])
+    except KeyboardInterrupt:
+        exit(130)
