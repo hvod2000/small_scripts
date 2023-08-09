@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -e
 
 # ip=$(curl ipecho.net/plain 2> /dev/null)
 ipv4=$(curl --ipv4 kiologyn.com/givemyip 2> /dev/null)
