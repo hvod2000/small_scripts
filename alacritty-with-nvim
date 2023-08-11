@@ -1,0 +1,7 @@
+#!/bin/sh
+
+case $1 in
+  (*:*) file=${1%:*} line=${1##*:};;
+  (*)   file=$1      line=1;;
+esac
+alacritty -o window.startup_mode=Maximized -e nvim "+$line" "$file"
