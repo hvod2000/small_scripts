@@ -1,0 +1,25 @@
+#!/usr/bin/env python3
+from hashlib import sha256 as shasum
+from pathlib import Path
+from shutil import move
+from sys import argv
+
+
+def hashalize_dir(path: Path):
+    files = set(path.iterdir())
+    for file in list(sorted(files)):
+        if not file.is_file():
+            continue
+        files.remove(file)
+        hsh, sfx = shasum(file.read_bytes()).hexdigest(), "".join(file.suffixes)
+        path = next(hsh[:i] + sfx for i in range(7, 99) if hsh[:i] + sfx not in files)
+        files.add(path)
+        move(file, path)
+
+
+for path in argv[1:]:
+    path = Path(path)
+    if path.is_dir():
+        hashalize_dir(path)
+    else:
+        print(f"{path} is not a directory")
