@@ -1,0 +1,5 @@
+#!/bin/sh
+
+theme=$(gsettings get org.gnome.desktop.interface color-scheme)
+[ "$theme" = "'prefer-dark'" ] && theme=prefer-light || theme=prefer-dark
+gsettings set org.gnome.desktop.interface color-scheme $theme
