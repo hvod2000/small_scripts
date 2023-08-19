@@ -1,0 +1,11 @@
+#!/bin/bash
+SHOULD_SWITCH_BACK=$1 # y/Y means it will switch back to current window  
+CURRENT_WINDOW=$(xdotool getactivewindow)  
+CURRENT_DESKTOP=$(xdotool get_desktop)
+RELOAD_KEYS="CTRL+SHIFT+R"  
+BROWSER="Firefox"  
+  
+xdotool search --desktop ${CURRENT_DESKTOP} ${BROWSER} windowactivate 2> /dev/null
+xdotool key --clearmodifiers ${RELOAD_KEYS}
+xdotool windowfocus --sync ${CURRENT_WINDOW}
+xdotool windowactivate --sync ${CURRENT_WINDOW}
