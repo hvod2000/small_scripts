@@ -1,0 +1,16 @@
+#!/bin/sh -e
+
+
+while true; do
+	sleep 100
+	app=$(xdotool getactivewindow getwindowname | sed -e "s@/@╱@g")
+	date=$(date +"%Y-%m-%d")
+	time=$(date +"%T")
+	path=~/Pictures/Screenshots/"What I was doing that day?/$date/$time $app.png"
+	echo $path
+	mkdir -p "$(dirname "$path")"
+	echo aboba?
+	imlib2_grab "$path"
+	echo aboba!
+	sleep $((900 - 100))
+done
