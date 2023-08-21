@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+import ast
+from pathlib import Path
+from collections import defaultdict
+from typing import NamedTuple
+
+
+class Snippet(NamedTuple):
+    span: tuple[int, int]
+    dependencies: dict[str, int]
+
+
+def parse_references(body: list[ast.stmt]) -> dict[str, int]:
+    references: dict[str, int] = {}
+    for stmt in body:
+        print(ast.dump(stmt))
+    return references
+
+
+def parse_module(source: str):
+    module = {}
+    dependencies = {}
+    for stmt in ast.parse(source).body:
+        match stmt:
+            case ast.FunctionDef(name=f, lineno=start, end_lineno=end, body=body):
+                module[f] = Snippet((start, end or start), {})
+                for h, count in parse_references(body).items():
+                    dependencies.setdefault(f, defaultdict(lambda: 0))[h] += count
+    for f in module:
+        module[f].dependencies.update(dependencies.get(f, {}))
+    return module
+
+
+source_path = Path(__file__)
+source_dir = Path(__file__).parent
+snippets = parse_module((source_dir / "snippets/python.py").read_text())
+for name, snippet in snippets.items():
+    print(f"{name}: {snippet}")
