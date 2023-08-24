@@ -20,12 +20,12 @@ debug: Callable[..., None]
 noop: Any = lambda *args, **kwargs: None
 
 
-def fix_efl(path: Path):
+def fix_eol(path: Path):
     debug(f"what is {path}?")
     if path.is_dir():
         debug(f"directory: {path}")
         for item in path.iterdir():
-            fix_efl(path.joinpath(item))
+            fix_eol(path.joinpath(item))
     elif path.is_file():
         encoded_text = path.read_bytes()
         try:
@@ -45,7 +45,7 @@ def main(script_name: str, *script_args: str):
     args = __import__("docopt").docopt(doc, script_args)
     debug = print if args["--verbose"] else noop
     debug(f"Running with arguments {dict(args)!r}")
-    fix_efl(Path(args["PATH"] or ".").resolve())
+    fix_eol(Path(args["PATH"] or ".").resolve())
 
 
 if __name__ == "__main__":
