@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -e
 
 git log --format='%aN' | sort -u | while read -r name; do
 	printf "%s\t" "$name"

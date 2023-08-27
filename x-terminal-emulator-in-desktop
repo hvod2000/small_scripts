@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -e
 
 cd "$(xdg-user-dir DESKTOP)" || true
 exec x-terminal-emulator

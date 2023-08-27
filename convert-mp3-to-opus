@@ -1,5 +1,4 @@
-#!/bin/sh
-set -e
+#!/bin/sh -e
 
 for m in *.mp3; do
     base="${m%.*}"

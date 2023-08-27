@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -e
 
 for f in *.log *.tuc; do
 	[ ! -e "$f" ] && continue

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -e
 
 source=$1
 target=$(basename "$source" .zig)
