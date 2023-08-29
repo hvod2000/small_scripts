@@ -7,10 +7,9 @@ while true; do
 	date=$(date +"%Y-%m-%d")
 	time=$(date +"%T")
 	path=~/Pictures/Screenshots/"What I was doing that day?/$date/$time $app.png"
-	echo $path
+	echo "Saving $path..."
 	mkdir -p "$(dirname "$path")"
-	echo aboba?
 	imlib2_grab "$path"
-	echo aboba!
+	echo "[ OK ] $path"
 	sleep $((900 - 100))
 done
