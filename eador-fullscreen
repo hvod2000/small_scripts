@@ -2,7 +2,7 @@
 
 monitor=$(xrandr | grep " connected " | cut -d' ' -f1 | head -n1)
 mode=$(xrandr | awk '/*/ {print $1}')
-trap 'sleep 1; xrandr --output "$monitor" --mode "$mode"; trap - EXIT; exit' EXIT INT HUP TERM QUIT SIGINT
+trap 'sleep 1; xrandr --output "$monitor" --mode "$mode"; trap - EXIT; exit' EXIT INT HUP TERM QUIT
 (
 	xrandr --output "$monitor" --mode "1024x768"
 	sleep 5
