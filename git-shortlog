@@ -1,4 +1,4 @@
 #!/bin/sh -e
 
 # https://git-scm.com/docs/pretty-formats
-git log --pretty=format:"%Cgreen%cs%Cred%d%Creset %s"
+git log --pretty=format:"%Cgreen%as%Cred%d%Creset %s"
