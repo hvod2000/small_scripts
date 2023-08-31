@@ -1,3 +1,57 @@
 #!/bin/sh -e
 
-git rebase HEAD~$1 --exec "git commit --amend --no-edit --date '$2'"
+SCRIPT=$0
+VARS=.git/.$(sha256sum $0 | cut -d " " -f1)
+
+main() {
+	mkdir $VARS -p
+	today=$(date +%Y-%m-%d)
+	commits=$(git rev-list --count origin/HEAD...HEAD)
+	last_date=$(git show --no-patch --format=%ci HEAD~$commits | cut -d " " -f1)
+	idle_days=$(datediff $last_date $today)
+	echo "pushless days = $idle_days"
+	echo "  new commits = $commits"
+	[ "$idle_days" -ge "$commits" ] ||
+		( echo "Not enough days has passed: $idle_days < $commits" && exit 1 )
+	echo $commits > $VARS/commits
+	echo $idle_days > $VARS/days
+	echo $last_date > $VARS/last
+	git rebase -q "HEAD~$commits" --exec $SCRIPT
+	rm -r $VARS
+}
+
+iteration() {
+	commits=$(cat $VARS/commits)
+	idle_days=$(cat $VARS/days)
+	last_date=$(cat $VARS/last)
+	skip=$(shuf -n1 -i 1-$((commits > 1 ? idle_days * 2 / commits - 1 : idle_days)))
+	idle_days=$((idle_days - skip))
+	commits=$((commits - 1))
+	last_date=$(date -d "$last_date + $skip days" +%Y-%m-%d)
+	date="$last_date 23:$(shuf -i0-5 -n1)$(shuf -i0-9 -n1):$(shuf -i0-5 -n1)$(shuf -i0-9 -n1) $(date +%z)"
+	echo "$date (delta=$skip)"
+	GIT_COMMITTER_DATE=format:iso8601:"$date" \
+		git commit --quiet --amend --no-edit --date "$date"
+	echo $commits > $VARS/commits
+	echo $idle_days > $VARS/days
+	echo $last_date > $VARS/last
+	echo
+	echo
+}
+
+datediff() {
+	date1=$1
+	date2=$2
+	days=0
+	while [ "$date1" != "$date2" ]; do
+		days=$((days+1))
+		date1=$(date -d "$date1 + 1 days" +%Y-%m-%d)
+	done
+	echo $days
+}
+
+if [ -d $VARS ]; then
+	iteration
+else
+	main
+fi
