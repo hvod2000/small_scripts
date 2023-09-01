@@ -16,7 +16,10 @@ main() {
 	echo $commits > $VARS/commits
 	echo $idle_days > $VARS/days
 	echo $last_date > $VARS/last
-	git rebase -q "HEAD~$commits" --exec $SCRIPT 2> /dev/null || true
+	script=$(mktemp)
+	cp $SCRIPT $script
+	chmod +x $script
+	git rebase -q "HEAD~$commits" --exec $script
 	rm -r $VARS
 }
 
