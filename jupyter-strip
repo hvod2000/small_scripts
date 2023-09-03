@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 
-import codecs
 import json
 from pathlib import Path
-from sys import argv, stdin
+from sys import argv
 
 
 def strip_notebook(notebook, numerate_cells=True):
     execution_count = 0
     for cell in notebook["cells"]:
-        if "execution_count" in cell and cell["execution_count"] != None:
+        if "execution_count" in cell and cell["execution_count"] is None:
             if numerate_cells:
                 execution_count += 1
             else:
@@ -29,10 +28,8 @@ def rstrip(path):
         try:
             notebook = json.loads(path.read_text())
             strip_notebook(notebook, numerate_cells=False)
-            path.write_text(
-                json.dumps(notebook, indent=1, ensure_ascii=False) + "\n"
-            )
-        except UnicodeDecodeError as e:
+            path.write_text(json.dumps(notebook, indent=1, ensure_ascii=False) + "\n")
+        except UnicodeDecodeError:
             print(f"{path} is not a plain text file.")
     elif path.is_dir():
         for path in path.iterdir():

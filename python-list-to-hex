@@ -2,7 +2,7 @@
 
 from ast import literal_eval
 from pathlib import Path
-from sys import argv, stdin
+from sys import argv
 
 
 def list2hex(lst):

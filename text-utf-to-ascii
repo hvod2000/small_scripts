@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from pathlib import Path
-from sys import argv, stdin
+from sys import argv
 
 
 def utf_to_ascii(text):
@@ -20,11 +20,11 @@ def handle(path):
         try:
             text = path.read_text()
             path.write_text(utf_to_ascii(text))
-        except UnicodeDecodeError as e:
+        except UnicodeDecodeError:
             print(f"{path} is not a plain text file.")
     else:
         for path in path.iterdir():
-            rstrip(path)
+            utf_to_ascii(path)
 
 
 for path in argv[1:]:

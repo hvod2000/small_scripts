@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 
-import codecs
 from pathlib import Path
-from sys import argv, stdin
+from sys import argv
 
 
 def rstrip(path):
@@ -10,8 +9,8 @@ def rstrip(path):
     if path.is_file():
         try:
             text = path.read_text().split("\n")
-            path.write_text("\n".join(l.rstrip() for l in text))
-        except UnicodeDecodeError as e:
+            path.write_text("\n".join(line.rstrip() for line in text))
+        except UnicodeDecodeError:
             print(f"{path} is not a plain text file.")
     else:
         for path in path.iterdir():

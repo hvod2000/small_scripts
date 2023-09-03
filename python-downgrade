@@ -16,7 +16,6 @@ import sys
 from pathlib import Path
 from typing import Any, Callable
 
-
 PATH_SOURCE = """class Path:
     def __init__(self, path):
         self.path = path.path if isinstance(path, Path) else path
