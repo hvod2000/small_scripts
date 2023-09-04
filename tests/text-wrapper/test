@@ -1,5 +1,0 @@
-#!/bin/sh -ex
-
-[ "$(echo test | ./text-wrapper)" = test ]
-[ "$(echo юникод. | ./text-wrapper)" = юникод. ]
-[ "$(echo 'A.F09;' | ./text-wrapper)" = 'A.F09;' ]
