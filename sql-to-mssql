@@ -1,8 +1,0 @@
-#!/usr/bin/env python3
-
-
-def sql_to_mssql(source):
-    return source.replace("SERIAL", "int IDENTITY").replace("timestamp", "datetime").replace(";", "GO")
-
-
-print(sql_to_mssql(open(0).read()))
