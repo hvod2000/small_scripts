@@ -1,0 +1,42 @@
+#!/usr/bin/env python3
+"""
+Watch after file and notify on updates.
+
+Usage: {script} [options] PATH
+
+Arguments:
+   PATH         Path to the file to be watched.
+
+Options:
+   -h, --help   Show this screen and exit.
+   --verbose    Raise verbosity level.
+"""
+import sys
+from pathlib import Path
+from inotify_simple import INotify, flags
+from typing import Any, Callable
+from contextlib import suppress
+
+debug: Callable[..., None]
+noop: Any = lambda *args, **kwargs: None
+
+
+def main(script_name: str, *script_args: str):
+    global debug
+    doc = __doc__.format(script=Path(script_name).name)
+    args = __import__("docopt").docopt(doc, script_args)
+    debug = print if args["--verbose"] else noop
+    debug(f"Running with arguments {dict(args)!r}")
+    path = Path(args["PATH"]).resolve()
+
+    inotify = INotify()
+    watch_flags = flags.CREATE | flags.DELETE | flags.MODIFY | flags.DELETE_SELF
+    while True:
+        inotify.add_watch(str(path.resolve()), watch_flags)
+        for event in inotify.read():
+            print(path)
+
+
+if __name__ == "__main__":
+    with suppress(KeyboardInterrupt):
+        main(*sys.argv)
