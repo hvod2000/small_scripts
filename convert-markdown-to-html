@@ -1,0 +1,53 @@
+#!/usr/bin/env python3
+"""
+Convert markdown file to html.
+
+Usage: {script} [options] SOURCE [TARGET]
+
+Arguments:
+   SOURCE       Path to the markdown file.
+   TARGET       Path to future HTML file.
+                If omitted stdout will be used instead.
+
+Options:
+   -h, --help   Show this screen and exit.
+   --verbose    Raise verbosity level.
+"""
+import sys
+from pathlib import Path
+from typing import Any, Callable
+
+debug: Callable[..., None]
+noop: Any = lambda *args, **kwargs: None
+
+SPECIAL_CHARACTERS = {"&": "amp", "<": "lt", ">": "gt"}
+TRANSLATION_TABLE = {ord(char): f"&{code};" for char, code in SPECIAL_CHARACTERS.items()}
+
+
+def text(text: str):
+    return text.translate(TRANSLATION_TABLE)
+
+
+def convert(markdown: str):
+    for line in markdown.strip("\n").split("\n"):
+        if line.startswith("#"):
+            title = line.lstrip("#")
+            lvl = min(len(line) - len(title), 6)
+            yield f"<h{lvl}> {text(title.strip())} </h{lvl}>"
+
+
+def main(script_name: str, *script_args: str):
+    global debug
+    doc = __doc__.format(script=Path(script_name).name)
+    args = __import__("docopt").docopt(doc, script_args)
+    debug = print if args["--verbose"] else noop
+    debug(f"Running with arguments {dict(args)!r}")
+    html = "\n".join(convert(Path(args["SOURCE"]).read_text()))
+    if args["TARGET"]:
+        Path(args["TARGET"]).write_text(html + "\n")
+    else:
+        print(html)
+
+
+if __name__ == "__main__":
+    main(*sys.argv)
