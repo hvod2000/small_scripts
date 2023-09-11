@@ -8,7 +8,7 @@ def utf_to_ascii(text):
     result = []
     for char in text:
         if ord(char) >= 128:
-            result.append(f"unicode_character_{ord(char)}")
+            result.append(f"U{ord(char)}")
         else:
             result.append(char)
     return "".join(result)
