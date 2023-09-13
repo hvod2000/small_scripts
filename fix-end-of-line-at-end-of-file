@@ -15,6 +15,7 @@ Options:
 import sys
 from pathlib import Path
 from typing import Any, Callable
+from contextlib import suppress
 
 debug: Callable[..., None]
 noop: Any = lambda *args, **kwargs: None
@@ -49,4 +50,5 @@ def main(script_name: str, *script_args: str):
 
 
 if __name__ == "__main__":
-    main(*sys.argv)
+    with suppress(KeyboardInterrupt):
+        main(*sys.argv)
