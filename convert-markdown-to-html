@@ -34,6 +34,10 @@ def convert(markdown: str):
             title = line.lstrip("#")
             lvl = min(len(line) - len(title), 6)
             yield f"<h{lvl}> {text(title.strip())} </h{lvl}>"
+        elif line == "":
+            yield "<br>"
+        else:
+            yield text(line.strip())
 
 
 def main(script_name: str, *script_args: str):
