@@ -1,0 +1,33 @@
+#!/bin/sh -e
+
+project=$1
+if [ -z "${project}" ]; then 
+	echo You should specify name of the project
+	exit 1
+fi
+
+project_dir=~/"Documents/Projects/$project"
+if [ -d "$project_dir" ]; then
+	echo This name is already taken, choose another one
+	exit 1
+fi
+
+mkdir -p "$project_dir"
+cd "$project_dir"
+git init
+git commit --allow-empty --message="Initial commit"
+if [ -z "$EDITOR" ]; then
+	EDITOR=nano
+fi
+
+printf "# %s\n" "$project" > readme.md
+echo "This project is in a very early stage of development. Don't look at it, it's shy." >> readme.md
+$EDITOR readme.md
+git add readme.md
+git commit --message="Add readme.md"
+
+printf "%s\n" "[*]" "indent_style = tab" "indent_size = 4" > .editorconfig
+git add .editorconfig
+git commit --message="Add .editorconfig"
+
+$SHELL
