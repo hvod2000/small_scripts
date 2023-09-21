@@ -1,32 +1,32 @@
 #!/bin/sh -e
 
 SCRIPT=$0
-VARS=.git/.$(sha256sum $0 | cut -d " " -f1)
+VARS=.git/.$(sha256sum "$SCRIPT" | cut -d " " -f1)
 
 main() {
-	mkdir $VARS -p
+	mkdir "$VARS" -p
 	today=$(date +%Y-%m-%d)
 	commits=$(git rev-list --count origin/HEAD...HEAD)
-	last_date=$(git show --no-patch --format=%ci HEAD~$commits | cut -d " " -f1)
-	idle_days=$(datediff $last_date $today)
+	last_date=$(git show --no-patch --format=%ci "HEAD~$commits" | cut -d " " -f1)
+	idle_days=$(datediff "$last_date" "$today")
 	echo "pushless days = $idle_days"
 	echo "  new commits = $commits"
 	[ "$idle_days" -ge "$commits" ] ||
 		( echo "Not enough days has passed: $idle_days < $commits" && exit 1 )
-	echo $commits > $VARS/commits
-	echo $idle_days > $VARS/days
-	echo $last_date > $VARS/last
+	echo "$commits" > "$VARS/commits"
+	echo "$idle_days" > "$VARS/days"
+	echo "$last_date" > "$VARS/last"
 	script=$(mktemp)
-	cp $SCRIPT $script
-	chmod +x $script
-	git rebase -q "HEAD~$commits" --exec $script
-	rm -r $VARS
+	cp -- "$SCRIPT" "$script"
+	chmod +x "$script"
+	git rebase -q "HEAD~$commits" --exec "$script"
+	rm -r "$VARS"
 }
 
 iteration() {
-	commits=$(cat $VARS/commits)
-	idle_days=$(cat $VARS/days)
-	last_date=$(cat $VARS/last)
+	commits=$(cat "$VARS/commits")
+	idle_days=$(cat "$VARS/days")
+	last_date=$(cat "$VARS/last")
 	skip=$(shuf -n1 -i 1-$((commits > 1 ? idle_days * 2 / commits - 1 : idle_days)))
 	idle_days=$((idle_days - skip))
 	commits=$((commits - 1))
@@ -35,9 +35,9 @@ iteration() {
 	echo "$date (delta=$skip)"
 	GIT_COMMITTER_DATE=format:iso8601:"$date" \
 		git commit --quiet --amend --no-edit --date "$date"
-	echo $commits > $VARS/commits
-	echo $idle_days > $VARS/days
-	echo $last_date > $VARS/last
+	echo "$commits" > "$VARS/commits"
+	echo "$idle_days" > "$VARS/days"
+	echo "$last_date" > "$VARS/last"
 }
 
 datediff() {
@@ -51,7 +51,7 @@ datediff() {
 	echo $days
 }
 
-if [ -d $VARS ]; then
+if [ -d "$VARS" ]; then
 	iteration
 else
 	main
