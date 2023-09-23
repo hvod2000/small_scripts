@@ -5,14 +5,19 @@ Search for text files in a directory hierarchy.
 Usage: {script} [options] EXPR [PATH]
 
 Arguments:
-    EXPR                   Python expression to filter files.
-    PATH                   Path to the file or directory with files.
-                           If not specified, use current directory.
+    EXPR - Python expression to filter files.
+    PATH - Path to the file or directory with files.
+           If not specified, use current directory.
 
 Options:
-    -h, --help             Show this screen and exit.
-    --verbose              Raise verbosity level.
-    -z, --zero-terminated  Output is terminated by NUL rather than EOL.
+    -h, --help
+        Show this screen and exit.
+
+    --verbose
+        Raise verbosity level.
+
+    -z, --zero-terminated
+        Output is terminated by NUL rather than EOL.
 """
 import sys
 from contextlib import suppress
