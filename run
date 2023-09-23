@@ -17,12 +17,12 @@ def run(cmd: list):
 
 SUFFIXES = {
     "clj": lambda path, args: run(["clojure", path] + args),
-    "py": lambda path, args: run(["python3", path] + args),
+    "py": lambda path, args: run(["pypy3.10", path] + args),
     "rb": lambda path, args: run(["ruby", path] + args),
     "js": lambda path, args: run(["node", path] + args),
-    "cpp": lambda path, args: run(["g++", "-o", path.with_suffix(""), path]) and
+    "cpp": lambda path, args: run(["g++", "-Ofast", "-o", path.with_suffix(""), path]) and
                               run([path.with_suffix("")] + args),
-    "c": lambda path, args: run(["gcc", "-o", path.with_suffix(""), path]) and
+    "c": lambda path, args: run(["gcc", "-Ofast", "-o", path.with_suffix(""), path]) and
                             run([path.with_suffix("")] + args),
     "asm": lambda path, args:
         run(["yasm", "-gdwarf2", "-felf64", path, f"-l{path.with_suffix('')}"]) and
