@@ -19,6 +19,8 @@ SUFFIXES = {
     "clj": lambda path, args: run(["clojure", path] + args),
     "py": lambda path, args: run(["pypy3.10", path] + args),
     "rb": lambda path, args: run(["ruby", path] + args),
+    "rs": lambda path, args: run(["rustc", "-C", "opt-level=3", "-o", path.with_suffix(""), "--", path]) and
+                             run([path.with_suffix("")] + args),
     "js": lambda path, args: run(["node", path] + args),
     "cpp": lambda path, args: run(["g++", "-Ofast", "-o", path.with_suffix(""), path]) and
                               run([path.with_suffix("")] + args),
