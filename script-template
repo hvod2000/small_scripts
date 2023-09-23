@@ -5,8 +5,8 @@ Aboba about aboba.
 Usage: {script} [options] [PATH]
 
 Arguments:
-    PATH  Path to the file or directory with files.
-          If not specified, use current directory.
+    PATH - Path to the file or directory with files.
+           If not specified, use current directory.
 
 Options:
     -h, --help
