@@ -20,6 +20,7 @@ if [ -z "$EDITOR" ]; then
 	EDITOR=nano
 fi
 
+# TODO: Add case switching for project name
 printf "# %s\n" "$project" > readme.md
 echo "This project is in a very early stage of development. Don't look at it, it's shy." >> readme.md
 $EDITOR readme.md
@@ -30,4 +31,7 @@ printf "%s\n" "[*]" "indent_style = tab" "indent_size = 4" > .editorconfig
 git add .editorconfig
 git commit --message="Add .editorconfig"
 
+clear
+cat readme.md && echo
+exa -Flarsname && echo
 $SHELL
