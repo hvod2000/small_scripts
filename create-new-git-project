@@ -6,7 +6,7 @@ if [ -z "${project}" ]; then
 	exit 1
 fi
 
-project_dir=~/"${GIT_PROJECTS_DIR=Documents/Projects}/$project"
+project_dir="${GIT_PROJECTS_DIR=~/Documents/Projects}/$project"
 if [ -d "$project_dir" ]; then
 	echo This name is already taken, choose another one
 	exit 1
@@ -32,6 +32,7 @@ git add .editorconfig
 git commit --message="Add .editorconfig"
 
 clear
-cat readme.md && echo
+# cat readme.md && echo
 exa -Flarsname && echo
+batcat * .editorconfig && echo
 $SHELL
