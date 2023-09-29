@@ -1,0 +1,45 @@
+#!/usr/bin/env python3
+"""
+Print all colors, that can be used in terminal without RGB-mode.
+
+Usage: {script} [options]
+
+Options:
+    -h, --help
+        Show this screen and exit.
+
+"""
+import sys
+from contextlib import suppress
+from pathlib import Path
+
+
+def print_color_table(width: int = 6):
+    R = "\x1b[0m"
+    colors = [
+        # *[(i, f"\x1b[3{i}m", f"\x1b[4{i}m") for i in range(8)],
+        # *[(8 + i, f"\x1b[9{i}m", f"\x1b[10{i}m") for i in range(8)],
+        *[("DFT", "\x1b[39m", "\x1b[49m"), ("RST", "\x1b[0m", "\x1b[0m")],
+        *[(i, f"\x1b[38;5;{i}m", f"\x1b[48;5;{i}m") for i in list(range(256))],
+    ]
+    w, cols = width, colors
+    for i in range((len(colors) + width - 1) // width):
+        print(" " * 4 + "".join(f"{b}    {R}{f}{i:>03}" for i, f, b in cols[i * w: i * w + w]) + R)
+        print(" " * 4 + "".join(f"{b}    {R}{b}{i:>03}" for i, f, b in cols[i * w: i * w + w]) + R)
+        print(" " * 4 + "".join(f"{b} " * 7 for i, f, b in cols[i * w: i * w + w]) + R)
+        print(" " * 4 + "".join(f"{b} " * 7 for i, f, b in cols[i * w: i * w + w]) + R)
+
+
+def main(script_name: str, *script_args: str):
+    doc = __doc__.format(script=Path(script_name).name)
+    __import__("docopt").docopt(doc, script_args)
+    print_color_table()
+
+
+def println(line: object):
+    print(str(line), end=getattr(println, "eol", "\n"))
+
+
+if __name__ == "__main__":
+    with suppress(KeyboardInterrupt):
+        main(*sys.argv)
