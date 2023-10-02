@@ -1,0 +1,58 @@
+#!/usr/bin/env python3
+"""
+Shorten path to a specified length
+
+Usage: {script} [options] [PATH]
+
+Arguments:
+    PATH - Path to be shortened.
+
+Options:
+    -l, --length=NUMBER
+        Desired line length [default: 36]
+
+    -h, --help
+        Show this screen and exit.
+
+    --verbose
+        Raise verbosity level.
+"""
+import sys
+from contextlib import suppress
+from pathlib import Path
+
+
+def main(script_name: str, *script_args: str):
+    doc = __doc__.format(script=Path(script_name).name)
+    args = __import__("docopt").docopt(doc, script_args)
+    setattr(debug, "enabled", args["--verbose"])
+    debug(f"Running with arguments {dict(args)!r}")
+    length = int(args["--length"])
+    print(shorten(Path(args["PATH"] or "."), length))
+
+
+def shorten(path: Path, max_length: int):
+    path = str(path.resolve())
+    home = str(Path.home())
+    if path.startswith(home):
+        path = "~" + path.removeprefix(home)
+    if (length := len(path)) <= max_length:
+        return path
+    root, *parts = path.split("/")
+    for i, part in enumerate(parts):
+        length -= len(part) - 1
+        parts[i] = part[0]
+        if length <= max_length:
+            return "/".join([root] + parts)
+    suffix = "/".join(parts[max(0, len(parts) - ((max_length - len(root) - 1) // 2)):])
+    return root + "/" * min(3, max_length - len(suffix) - len(root)) + suffix
+
+
+def debug(msg: str):
+    if getattr(debug, "enabled", False):
+        print(msg)
+
+
+if __name__ == "__main__":
+    with suppress(KeyboardInterrupt):
+        main(*sys.argv)
