@@ -16,9 +16,11 @@ Options:
         Raise verbosity level.
 """
 import sys
-from os import environ, system
 from contextlib import suppress
+from os import environ, system
 from pathlib import Path
+from subprocess import run
+
 SCRIPT_TEMPLATE = "script-templates/process_text_files_using_python.py"
 
 
@@ -27,8 +29,8 @@ def main(script_name: str, *script_args: str):
     args = __import__("docopt").docopt(doc, script_args)
     setattr(debug, "enabled", args["--verbose"])
     debug(f"Running with arguments {dict(args)!r}")
-    projects = Path(environ["GIT_PROJECTS_DIR"] or "~/Documents/Projects")
-    name = "-".join(args["NAME"].split()).lower()
+    projects = Path(environ["GIT_PROJECTS_DIR"] or "~/Documents/Projects").resolve()
+    name = "-".join(args["DESC"].split()).lower()
     debug(f"script-name: {name}")
     path = projects.joinpath("small_scripts").joinpath(name)
     if path.exists():
@@ -36,9 +38,10 @@ def main(script_name: str, *script_args: str):
         exit(1)
     debug(f"script-path: {path}")
     script = Path(__file__).parent.joinpath(SCRIPT_TEMPLATE).read_text()
-    path.write_text(script.replace("SCRIPT_DESCRIPTION", args["NAME"]))
-    # TODO: fix filename manhandling
-    system(f"$EDITOR '{path}'")
+    path.write_text("")
+    path.chmod(path.stat().st_mode | 0o100)
+    path.write_text(script.replace("SCRIPT_DESCRIPTION", args["DESC"] + "."))
+    run(["nvim", "--", str(path)])
     system("$SHELL")
 
 
