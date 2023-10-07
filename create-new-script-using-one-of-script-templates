@@ -1,0 +1,54 @@
+#!/usr/bin/env python3
+"""
+Create new script using one of script templates.
+
+Usage: {script} [options] PATH
+
+Arguments:
+    PATH - Desired path for new script.
+
+Options:
+    -h, --help
+        Show this screen and exit.
+
+    --verbose
+        Raise verbosity level.
+"""
+import sys
+import os
+from random import randint
+from subprocess import run
+from contextlib import suppress
+from pathlib import Path
+
+
+SCRIPT_LUA = (Path(__file__).parent / "create-new-script-using-one-of-script-templates.src/script.lua").read_text()
+
+
+def create_script(path: Path):
+    debug(f"script-path: {path}")
+    path.write_text("")
+    path.chmod(path.stat().st_mode | 0o100)
+    lua_script = path.parent / f".tmp{randint(0,10**128-1)}.lua"
+    lua_script.write_text(SCRIPT_LUA)
+    run(["nvim", "-S", lua_script, "--", str(path)], check=False)
+    os.remove(lua_script)
+    os.system("$SHELL")
+
+
+def main(script_name: str, *script_args: str):
+    doc = __doc__.format(script=Path(script_name).name)
+    args = __import__("docopt").docopt(doc, script_args)
+    setattr(debug, "enabled", args["--verbose"])
+    debug(f"Running with arguments {dict(args)!r}")
+    create_script(Path(args["PATH"]))
+
+
+def debug(*objects: object, sep: str = " "):
+    if getattr(debug, "enabled", False):
+        print(sep.join(map(str, objects)))
+
+
+if __name__ == "__main__":
+    with suppress(KeyboardInterrupt):
+        main(sys.argv[0], *sys.argv[1:])
