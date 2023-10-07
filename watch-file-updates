@@ -12,10 +12,11 @@ Options:
    --verbose    Raise verbosity level.
 """
 import sys
-from pathlib import Path
-from inotify_simple import INotify, flags
-from typing import Any, Callable
 from contextlib import suppress
+from pathlib import Path
+from typing import Any, Callable
+
+from inotify_simple import INotify, flags
 
 debug: Callable[..., None]
 noop: Any = lambda *args, **kwargs: None

@@ -13,9 +13,9 @@ Options:
    --verbose    Raise verbosity level.
 """
 import sys
+from contextlib import suppress
 from pathlib import Path
 from typing import Any, Callable
-from contextlib import suppress
 
 debug: Callable[..., None]
 noop: Any = lambda *args, **kwargs: None
