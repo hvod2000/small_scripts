@@ -16,7 +16,7 @@ Options:
         Raise verbosity level.
 
     -z, --zero-terminated
-        Outputed items are terminated by NUL rather than EOL.
+        Outputted items are terminated by NUL rather than EOL.
 """
 import sys
 from contextlib import suppress
