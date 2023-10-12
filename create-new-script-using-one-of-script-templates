@@ -21,7 +21,7 @@ from pathlib import Path
 from random import randint
 from subprocess import run
 
-SCRIPT_LUA = (Path(__file__).parent / "create-new-script-using-one-of-script-templates.src/script.lua").read_text()
+SCRIPT_LUA = Path(__file__ + ".src/script.lua").read_text()
 
 
 def create_script(path: Path):
