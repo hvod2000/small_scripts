@@ -1,0 +1,74 @@
+#!/usr/bin/env python3
+"""
+Inline file dependences right into the source.
+
+Usage: {script} [options] PATH
+
+Arguments:
+    PATH - Path to the source.
+
+Options:
+    -h, --help
+        Show this screen and exit.
+
+    --verbose
+        Raise verbosity level.
+"""
+import sys
+import ast
+import os
+from contextlib import suppress
+from pathlib import Path
+
+FILE_IMPORT_INFIX = " = Path(__file__ + "
+FILE_IMPORT_SUFFIX = ").read_text()"
+
+
+def pack(monolith_path: Path):
+    lines = list(monolith_path.read_text().removesuffix("\n").split("\n"))
+    lines_iter = iter(enumerate(lines))
+    dirs_to_be_removed = set()
+    for i, line in lines_iter:
+        if not line.strip() or line.startswith("#") or line.startswith("import ") or line.startswith("from "):
+            continue
+        if line == '"""' or line == "'''":
+            next(end_line for _, end_line in lines_iter if line == end_line)
+            continue
+        if not (FILE_IMPORT_INFIX in line and line.endswith(FILE_IMPORT_SUFFIX)):
+            break
+        variable, path = line.removesuffix(FILE_IMPORT_SUFFIX).split(FILE_IMPORT_INFIX, 1)
+        try:
+            path = Path(str(monolith_path) + ast.literal_eval(path))
+            source = path.read_text()
+        except (SyntaxError, UnicodeDecodeError):
+            continue
+        if str(path.parent).removesuffix(".d") == str(monolith_path):
+            os.remove(path)
+            dirs_to_be_removed.add(path.parent)
+        source_lines = list(source.split("\n"))
+        if source_lines and not source_lines[-1]:
+            source_lines.pop()
+        source_lines = ["    " + repr(line + "\n") for line in source_lines]
+        lines[i] = "\n".join([f"{variable} = (", *source_lines, ")"])
+    monolith_path.write_text("".join(line + "\n" for line in lines))
+    for dir_path in dirs_to_be_removed:
+        if len([dir_path.iterdir()]) > 0:
+            os.rmdir(dir_path)
+
+
+def main(script_name: str, *script_args: str):
+    doc = __doc__.format(script=Path(script_name).name)
+    args = __import__("docopt").docopt(doc, script_args)
+    setattr(debug, "enabled", args["--verbose"])
+    debug(f"Running with arguments {dict(args)!r}")
+    pack(Path(args["PATH"]).resolve())
+
+
+def debug(*objects: object, sep: str = " "):
+    if getattr(debug, "enabled", False):
+        print(sep.join(map(str, objects)))
+
+
+if __name__ == "__main__":
+    with suppress(KeyboardInterrupt):
+        main(sys.argv[0], *sys.argv[1:])
