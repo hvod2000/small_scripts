@@ -10,6 +10,8 @@ def run(cmd: list):
     args = [cmd[0].resolve() if isinstance(cmd[0], Path) else cmd[0]] + cmd[1:]
     # if sys.stderr.isatty():
     #     print("\x1b[0;36m> " + " ".join(map(str, args)) + "\x1b[0m", file=sys.stderr)
+    if sys.stdout.isatty():
+        print("\x1b[91m──$\x1b[95m", " ".join(map(str, args)), "\x1b[0m")
     if code := subprocess.run(list(map(str, args))).returncode:
         exit(code)
     return True
