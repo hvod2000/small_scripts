@@ -31,9 +31,20 @@ SCRIPT_LUA = (
     '\tlocal conf = require("telescope.config").values\n'
     '\tlocal actions = require "telescope.actions"\n'
     '\tlocal action_state = require "telescope.actions.state"\n'
-    '\tlocal make_entry = require "telescope.make_entry"\n'
+    '\t-- local make_entry = require "telescope.make_entry"\n'
     '\tlocal find_command = { "find", template_dir, "-type", "f" }\n'
-    "\tlocal opts = { entry_maker = make_entry.gen_from_file {} }\n"
+    "\tlocal opts = {\n"
+    "\t\t-- entry_maker = make_entry.gen_from_file {}\n"
+    "\t\tentry_maker = function(path)\n"
+    "\t\t\tlocal basename = fs.get_path_basename(path)\n"
+    '\t\t\tlocal name = basename:gsub("_|-", " ")\n'
+    "\t\t\treturn {\n"
+    "\t\t\t\tvalue = path,\n"
+    "\t\t\t\tdisplay = name,\n"
+    "\t\t\t\tordinal = name,\n"
+    "\t\t\t}\n"
+    "\t\tend\n"
+    "\t}\n"
     "\tpickers.new(opts, {\n"
     '\t\tprompt_title = "Choose template",\n'
     "\t\tfinder = finders.new_oneshot_job(find_command, opts),\n"
@@ -44,7 +55,7 @@ SCRIPT_LUA = (
     "\t\t\t\tactions.close(prompt_bufnr)\n"
     "\t\t\t\tlocal selection = action_state.get_selected_entry()\n"
     "\t\t\t\tif not selection then return end\n"
-    "\t\t\t\tfs.load_template(selection[1])\n"
+    "\t\t\t\tfs.load_template(selection.value)\n"
     "\t\t\tend)\n"
     "\t\t\treturn true\n"
     "\t\tend,\n"
@@ -59,6 +70,10 @@ SCRIPT_LUA = (
     "\tend\n"
     "\tvim.api.nvim_buf_set_lines(0, 0, -1, true, lines)\n"
     '\tvim.cmd "w | e"\n'
+    "end\n"
+    "\n"
+    "fs.get_path_basename = function(path)\n"
+    '\treturn path:sub(path:find("/[^/]*$") + 1)\n'
     "end\n"
     "\n"
     "main()\n"
