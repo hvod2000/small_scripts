@@ -48,7 +48,7 @@ def pack(monolith_path: Path):
         source_lines = list(source.split("\n"))
         if source_lines and not source_lines[-1]:
             source_lines.pop()
-        source_lines = ["    " + repr(line + "\n") for line in source_lines]
+        source_lines = ["    " + quoted(line + "\n") for line in source_lines]
         lines[i] = "\n".join([f"{variable} = (", *source_lines, ")"])
     monolith_path.write_text("".join(line + "\n" for line in lines))
     for dir_path in dirs_to_be_removed:
@@ -67,6 +67,13 @@ def main(script_name: str, *script_args: str):
 def debug(*objects: object, sep: str = " "):
     if getattr(debug, "enabled", False):
         print(sep.join(map(str, objects)))
+
+
+def quoted(string: str):
+    table = {"\\": "\\\\", "\n": "\\n", "\r": "\\r", "\t": "\\t"}
+    quotes = '"' if "'" in string or '"' not in string else "'"
+    trans = str.maketrans(table | {quotes: "\\" + quotes})
+    return quotes + string.translate(trans) + quotes
 
 
 if __name__ == "__main__":
