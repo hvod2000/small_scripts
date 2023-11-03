@@ -27,7 +27,7 @@ def unpack(monolith_path: Path):
         raise Exception(f"{dir_path} already exists")
     dir_path.mkdir()
     lines = []
-    lines_iter = iter(list(monolith_path.read_text().removesuffix("\n").split("\n")))
+    lines_iter = iter(list(monolith_path.read_text().splitlines()))
     for line in lines_iter:
         lines.append(line)
         if not line.strip() or line.startswith("#") or line.startswith("import ") or line.startswith("from "):

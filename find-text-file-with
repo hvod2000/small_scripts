@@ -25,7 +25,7 @@ from pathlib import Path
 
 
 def process(file: Path, expr: str):
-    lines = list(file.read_text().removesuffix("\n").split("\n"))
+    lines = file.read_text().splitlines()
     names = {
         "file": file,
         "lines": lines,
