@@ -1,0 +1,15 @@
+#!/bin/sh -e
+
+
+sleep 1
+while true; do
+	sleep 1
+	app=$(xdotool getactivewindow getwindowname | sed -e "s@/@╱@g")
+	date=$(date +"%y%m%d")
+	time=$(date +"%T")
+	path=~/Desktop/srceenshots/"$date $time $app.png"
+	printf " ????  %s " "$path"
+	mkdir -p "$(dirname "$path")"
+	imlib2_grab "$path"
+	printf "\r[ OK ] %s\n" "$path"
+done
