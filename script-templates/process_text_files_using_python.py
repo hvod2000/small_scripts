@@ -24,7 +24,7 @@ from pathlib import Path
 
 
 def process(text: str):
-    lines = list(text.removesuffix("\n").split("\n"))
+    lines = text.splitlines()
     for line in lines:
         emit(line)
 
