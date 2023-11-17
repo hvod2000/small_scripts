@@ -37,14 +37,22 @@ SCRIPT_LUA = (
     "\t\t-- entry_maker = make_entry.gen_from_file {}\n"
     "\t\tentry_maker = function(path)\n"
     "\t\t\tlocal basename = fs.get_path_basename(path)\n"
-    '\t\t\tlocal name = basename:gsub("_|-", " ")\n'
+    '\t\t\tlocal name = basename:gsub("_|-", " "):gsub("%..*$", "")\n'
+    "\t\t\tlocal ordinal = name\n"
+    '\t\t\tif string.sub(basename, -3) == ".py" then\n'
+    '\t\t\t\tordinal = "[python] " .. name\n'
+    "\t\t\tend\n"
     "\t\t\treturn {\n"
     "\t\t\t\tvalue = path,\n"
     "\t\t\t\tdisplay = name,\n"
-    "\t\t\t\tordinal = name,\n"
+    "\t\t\t\tordinal = ordinal,\n"
     "\t\t\t}\n"
     "\t\tend\n"
     "\t}\n"
+    '\tlocal description = os.getenv("SCRIPT_DESCRIPTION")\n'
+    '\tif description and description:find("^Convert .* to .*") then\n'
+    '\t\topts.default_text = "convert "\n'
+    "\tend\n"
     "\tpickers.new(opts, {\n"
     '\t\tprompt_title = "Choose template",\n'
     "\t\tfinder = finders.new_oneshot_job(find_command, opts),\n"
