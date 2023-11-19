@@ -77,7 +77,9 @@ SCRIPT_LUA = (
     '\t\tlines[#lines + 1] = line:gsub("SCRIPT_DESCRIPTION", description)\n'
     "\tend\n"
     "\tvim.api.nvim_buf_set_lines(0, 0, -1, true, lines)\n"
-    '\tvim.cmd "w | e"\n'
+    '\tvim.fn.search("def ")\n'
+    '\tvim.cmd.normal "jlllll"\n'
+    '\tvim.cmd "redraw | w | e"\n'
     "end\n"
     "\n"
     "fs.get_path_basename = function(path)\n"
