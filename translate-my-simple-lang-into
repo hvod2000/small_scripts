@@ -1,0 +1,219 @@
+#!/usr/bin/env python3
+"""
+Translate my simple language into specified language.
+
+Usage: {script} [options] LANG
+
+Arguments:
+    LANG - Target language of translation.
+
+Options:
+    -h, --help
+        Show this screen and exit.
+"""
+import os
+import sys
+from contextlib import suppress
+from pathlib import Path
+from string import punctuation
+
+
+def python(line: str, lines):
+    match line.strip().split():
+        case ():
+            yield 'print("hello, world")'
+        case "def", thing:
+            projects = Path(os.getenv("GIT_PROJECTS_DIR") or "~/Documents/Projects")
+            lib = projects / "learn_python_once_again/my_personal_snippet_library"
+            fs = {str(function.with_suffix("").stem): function for function in lib.iterdir()}
+            if thing not in fs:
+                print(line)
+                for f in fs:
+                    print("#", f)
+                return
+            source = fs[thing].read_text().splitlines()
+            main = 'if __name__ == "__main__":'
+            if main in source:
+                source = source[: source.index('if __name__ == "__main__":')]
+            while source and source[-1] == "":
+                source.pop()
+            yield "\n".join(source) + "\n\n"
+        case "pass", "#", *_:
+            yield line[line.index("#") + 1:].lstrip()
+        case "#", *_:
+            yield line.removeprefix("# ")
+        case _:
+            yield "pass  # " + line
+
+
+def cpp(line: str, lines):
+    match line.strip().split():
+        case ():
+            for header in "iostream tuple vector".split():
+                yield f"#include <{header}>"
+            yield cpp.std + cpp.main
+        case "<<t", :
+            yield "template <typename T, typename... P>"
+            yield "ostream &operator<<(ostream &out, tuple<T, P...> const &tup) {"
+            yield '\tapply([&](T x, auto &&...xs) {out << "(" << x; ((out << ", " << xs), ...); }, tup);'
+            yield '\treturn out << ")";'
+            yield "}\n\n"
+        case ">>t", :
+            yield "template <typename... T>"
+            yield "istream &operator>>(istream &in, tuple<T...> &tup) {"
+            yield "\tapply([&](auto &&...x) {((in >> x), ...); }, tup);"
+            yield "\treturn in;"
+            yield "}\n\n"
+        case "<<v", *types:
+            if not types:
+                yield "template <typename T>"
+                types = ["T"]
+            for typ in types:
+                typ = typ.rstrip(",;").strip()
+                yield "ostream &operator<<(std::ostream &out, const vector<" + typ + "> &vec) {"
+                yield "\tfor (int i = 0; i < vec.size(); i++)"
+                yield '\t\tout << (i != 0 ? ", " : "{") << vec[i];'
+                yield '\treturn out << "}";'
+                yield "}\n\n"
+        case ">>v", *types:
+            if not types:
+                yield "template <typename T>"
+                types = ["T"]
+            for typ in types:
+                typ = typ.rstrip(",;").strip()
+                yield "istream &operator>>(std::istream &in, vector<" + typ + "> &vec) {"
+                yield "\tfor (int i = 0; i < vec.size(); i++)"
+                yield "\t\tin >> vec[i];"
+                yield "\treturn in;"
+                yield "}\n\n"
+        case typ, array_sum if array_sum.endswith("_sum"):
+            array = array_sum.removesuffix("_sum")
+            tr = {**{ord(x): "_" for x in "<>"}, **{ord(x): "" for x in "([])"}}
+            array_sum = array_sum.translate(tr)
+            array_name = array.translate(tr)
+            element = "x"
+            if len(array_name) > 1 and array_name[-1] == "s":
+                element = array_name[:-1]
+            yield f"{typ} {array_sum} = 0;"
+            yield f"for (auto {element}: {array})\n\t{array_sum} += {element};"
+        case "#include", :
+            yield "#include <bits/stdc++.h>\n" + cpp.std
+        case "main", :
+            yield cpp.main
+        case _ if ">" in line:
+            typ_str, vars_str = line.rsplit(">", 1)
+            typ_str += ">"
+            vars = [var.rstrip(punctuation).strip() for var in vars_str.strip().split()]
+            yield f"{typ_str} " + ", ".join(vars) + ";"
+            typ = parse_cpp_type(typ_str)
+            for var in vars:
+                yield from read_cpp_variable(typ, var)
+        case typ, *vars if typ != "//" and "=" not in line:
+            vars = [var.rstrip(punctuation).strip() for var in vars]
+            yield f"{typ} " + ", ".join(vars) + ";"
+            yield "cin >> " + " >> ".join(vars) + ";"
+        case "//", *_:
+            yield line[3:]
+        case _:
+            yield f"// {line}"
+
+
+cpp.std = "using namespace std;\n\n"
+cpp.main = "int main() {\n\t// cin.tie(nullptr);\n\tios::sync_with_stdio(false);\n}\n"
+
+
+def parse_cpp_type(typ_str: str):
+    def parse(j: int):
+        i = j
+        while j < len(typ_str) and typ_str[j] not in "<>,":
+            j += 1
+        if j == len(typ_str) or typ_str[j] in ">,":
+            return typ_str[i:j].strip(), j
+        k, args = j, []
+        while k < len(typ_str) and typ_str[k] != ">":
+            arg, k = parse(k + 1)
+            args.append(arg)
+            while k < len(typ_str) and typ_str[k] == " ":
+                k += 1
+        return (typ_str[i:j].strip(), args), k + 1
+
+    # print("//", parse(0)[0])
+    return parse(0)[0]
+
+
+def read_cpp_variable(typ, var: str, indexes=None):
+    inds = indexes or indexnames()
+    match typ:
+        case "tuple", list(types):
+            if all(isinstance(par, str) for par in types):
+                fields = " >> ".join(f"get<{i}>({var})" for i, _ in enumerate(types))
+                yield "cin >> " + fields + ";"
+            else:
+                for i, typ in enumerate(types):
+                    yield from read_cpp_variable(typ, f"get<{i}>({var})")
+        case "vector", [typ]:
+            tr = {**{ord(x): "_" for x in "<>"}, **{ord(x): "" for x in "([])"}}
+            size = var.translate(tr) + "_size"
+            yield f"int {size};"
+            yield f"cin >> {size};"
+            yield f"{var}.resize({size});"
+            i = next(inds)
+            yield f"for (int {i} = 0; {i} < {size}; {i}++) " + "{"
+            for line in read_cpp_variable(typ, f"{var}[{i}]", inds):
+                yield "\t" + line
+            yield "}"
+        case str(typ):
+            yield f"cin >> {var};"
+        case _:
+            yield f"// unknown type: {typ}"
+
+
+def main(script_name: str, *script_args: str):
+    doc = __doc__.format(script=Path(script_name).name)
+    args = __import__("docopt").docopt(doc, script_args)
+    lang = args["LANG"]
+    if lang == "python":
+        handler = python
+    elif lang == "cpp":
+        handler = cpp
+    else:
+        print(f"Error: unknown language {lang}", file=sys.stderr)
+        sys.exit(1)
+    lines = read_lines()
+    for indented_line in lines:
+        line = indented_line.lstrip()
+        indent = indented_line[: len(indented_line) - len(line)]
+        for output in handler(line, (line.removeprefix(indent) for line in lines)):
+            for output in output.splitlines():
+                print(indent + output)
+
+
+def indexnames():
+    yield from "ijk"
+    names = (x + y for x in indexnames() for y in "0123456789")
+    yield from (name for name in names if name[1] != "0")
+
+
+def varnames():
+    letters = "xyzwuvtabcdefghijklmnopqrst"
+    yield from letters
+    yield from (x + y for x in varnames() for y in "123456789" + letters)
+
+
+def read_lines(prompt: str = "\x1b[91m>\x1b[0m "):
+    if not sys.stdout.isatty():
+        prompt = ""
+    while True:
+        try:
+            yield input(prompt)
+        except EOFError:
+            break
+    if sys.stdout.isatty():
+        username = os.getenv("USER")
+        username = username.title() if username else "user"
+        print(f"\nGoodbye, \x1b[92m{username}\x1b[0m.")
+
+
+if __name__ == "__main__":
+    with suppress(KeyboardInterrupt):
+        main(sys.argv[0], *sys.argv[1:])
