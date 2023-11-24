@@ -14,8 +14,8 @@ Options:
 import os
 import sys
 from contextlib import suppress
+from itertools import groupby, islice
 from pathlib import Path
-from string import punctuation
 
 
 def python(line: str, lines):
@@ -47,24 +47,25 @@ def python(line: str, lines):
 
 
 def cpp(line: str, lines):
-    match line.strip().split():
+    tokens = parse(line)
+    match tokens:
         case ():
             for header in "iostream tuple vector".split():
                 yield f"#include <{header}>"
             yield cpp.std + cpp.main
-        case "<<t", :
+        case ["<<t"]:
             yield "template <typename T, typename... P>"
             yield "ostream &operator<<(ostream &out, tuple<T, P...> const &tup) {"
             yield '\tapply([&](T x, auto &&...xs) {out << "(" << x; ((out << ", " << xs), ...); }, tup);'
             yield '\treturn out << ")";'
             yield "}\n\n"
-        case ">>t", :
+        case [">>t"]:
             yield "template <typename... T>"
             yield "istream &operator>>(istream &in, tuple<T...> &tup) {"
             yield "\tapply([&](auto &&...x) {((in >> x), ...); }, tup);"
             yield "\treturn in;"
             yield "}\n\n"
-        case "<<v", *types:
+        case ["<<v", *types]:
             if not types:
                 yield "template <typename T>"
                 types = ["T"]
@@ -75,7 +76,7 @@ def cpp(line: str, lines):
                 yield '\t\tout << (i != 0 ? ", " : "{") << vec[i];'
                 yield '\treturn out << "}";'
                 yield "}\n\n"
-        case ">>v", *types:
+        case [">>v", *types]:
             if not types:
                 yield "template <typename T>"
                 types = ["T"]
@@ -86,7 +87,7 @@ def cpp(line: str, lines):
                 yield "\t\tin >> vec[i];"
                 yield "\treturn in;"
                 yield "}\n\n"
-        case typ, array_sum if array_sum.endswith("_sum"):
+        case [typ, array_sum] if array_sum.endswith("_sum"):
             array = array_sum.removesuffix("_sum")
             tr = {**{ord(x): "_" for x in "<>"}, **{ord(x): "" for x in "([])"}}
             array_sum = array_sum.translate(tr)
@@ -96,23 +97,20 @@ def cpp(line: str, lines):
                 element = array_name[:-1]
             yield f"{typ} {array_sum} = 0;"
             yield f"for (auto {element}: {array})\n\t{array_sum} += {element};"
-        case "#include", :
+        case ["#include"]:
             yield "#include <bits/stdc++.h>\n" + cpp.std
-        case "main", :
+        case ["main"]:
             yield cpp.main
-        case _ if ">" in line:
-            typ_str, vars_str = line.rsplit(">", 1)
-            typ_str += ">"
-            vars = [var.rstrip(punctuation).strip() for var in vars_str.strip().split()]
+        case [typ, *vars] if typ != "/":
+            typ_str = unparse([typ])
+            vars = [v for v in vars if v not in ",;"]
             yield f"{typ_str} " + ", ".join(vars) + ";"
-            typ = parse_cpp_type(typ_str)
-            for var in vars:
-                yield from read_cpp_variable(typ, var)
-        case typ, *vars if typ != "//" and "=" not in line:
-            vars = [var.rstrip(punctuation).strip() for var in vars]
-            yield f"{typ} " + ", ".join(vars) + ";"
-            yield "cin >> " + " >> ".join(vars) + ";"
-        case "//", *_:
+            if isinstance(typ, str):
+                yield "cin >> " + " >> ".join(vars) + ";"
+            else:
+                for var in vars:
+                    yield from read_cpp_variable(typ, var)
+        case ["/", "/", *_]:
             yield line[3:]
         case _:
             yield f"// {line}"
@@ -144,14 +142,15 @@ def parse_cpp_type(typ_str: str):
 def read_cpp_variable(typ, var: str, indexes=None):
     inds = indexes or indexnames()
     match typ:
-        case "tuple", list(types):
+        case ["tuple", "<", *types, ">"]:
+            types = [t for t in types if t != ","]
             if all(isinstance(par, str) for par in types):
                 fields = " >> ".join(f"get<{i}>({var})" for i, _ in enumerate(types))
                 yield "cin >> " + fields + ";"
             else:
                 for i, typ in enumerate(types):
                     yield from read_cpp_variable(typ, f"get<{i}>({var})")
-        case "vector", [typ]:
+        case ["vector", "<", typ, ">"]:
             tr = {**{ord(x): "_" for x in "<>"}, **{ord(x): "" for x in "([])"}}
             size = var.translate(tr) + "_size"
             yield f"int {size};"
@@ -166,6 +165,44 @@ def read_cpp_variable(typ, var: str, indexes=None):
             yield f"cin >> {var};"
         case _:
             yield f"// unknown type: {typ}"
+
+
+def split_into_tokens(source: str):
+    groups = (g for w in source.split() for g in groupby(w, str.isalnum))
+    for alphanumeric, chars in groups:
+        if alphanumeric:
+            yield "".join(chars)
+        else:
+            yield from chars
+
+
+def parse(source: str, parentheses: str = "()[]<>"):
+    closings = "".join(p for i, p in enumerate(parentheses) if i % 2 == 1)
+    tokens = []
+    for token in split_into_tokens(source):
+        i = closings.find(token)
+        if i == -1:
+            tokens.append(token)
+        elif i != -1:
+            children = []
+            while tokens and tokens[-1] != parentheses[2 * i]:
+                children.append(tokens.pop())
+            tokens.pop()
+            node = [tokens.pop(), parentheses[2 * i]] + list(reversed(children)) + [closings[i]]
+            tokens.append(node)
+    return tokens
+
+
+def unparse(ast):
+    def unparse(ast):
+        if isinstance(ast, str):
+            return ast
+        f, opening, *args, closing = map(unparse, ast)
+        args_str = "".join(arg + " " * (arg == ",") for arg in args)
+        return f + opening + args_str + closing
+    if isinstance(ast, str):
+        return ast
+    return "".join(unparse(token) for token in ast)
 
 
 def main(script_name: str, *script_args: str):
@@ -198,6 +235,12 @@ def varnames():
     letters = "xyzwuvtabcdefghijklmnopqrst"
     yield from letters
     yield from (x + y for x in varnames() for y in "123456789" + letters)
+
+
+def chunked(iterable, n: int):
+    it = iter(iterable)
+    while chunk := list(islice(it, n)):
+        yield chunk
 
 
 def read_lines(prompt: str = "\x1b[91m>\x1b[0m "):
