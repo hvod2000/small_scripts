@@ -87,7 +87,7 @@ def cpp(line: str, lines):
                 yield "\t\tin >> vec[i];"
                 yield "\treturn in;"
                 yield "}\n\n"
-        case [typ, array_sum] if array_sum.endswith("_sum"):
+        case [typ, str(array_sum)] if array_sum.endswith("_sum"):
             array = array_sum.removesuffix("_sum")
             tr = {**{ord(x): "_" for x in "<>"}, **{ord(x): "" for x in "([])"}}
             array_sum = array_sum.translate(tr)
@@ -102,8 +102,12 @@ def cpp(line: str, lines):
         case ["main"]:
             yield cpp.main
         case [typ, *vars] if typ != "/":
+            vars = [v for v in vars if v not in [",", ";"]]
+            match vars:
+                case [[array, "[", size, "]"]]:
+                    vars = [array]
+                    typ = ["array", "<", typ, ",", size, ">"]
             typ_str = unparse([typ])
-            vars = [v for v in vars if v not in ",;"]
             yield f"{typ_str} " + ", ".join(vars) + ";"
             if isinstance(typ, str):
                 yield "cin >> " + " >> ".join(vars) + ";"
@@ -161,6 +165,12 @@ def read_cpp_variable(typ, var: str, indexes=None):
             for line in read_cpp_variable(typ, f"{var}[{i}]", inds):
                 yield "\t" + line
             yield "}"
+        case ["array", "<", typ, ",", size, ">"]:
+            i = next(inds)
+            yield f"for (int {i} = 0; {i} < {size}; {i}++) " + "{"
+            for line in read_cpp_variable(typ, f"{var}[{i}]", inds):
+                yield "\t" + line
+            yield "}"
         case str(typ):
             yield f"cin >> {var};"
         case _:
@@ -200,6 +210,7 @@ def unparse(ast):
         f, opening, *args, closing = map(unparse, ast)
         args_str = "".join(arg + " " * (arg == ",") for arg in args)
         return f + opening + args_str + closing
+
     if isinstance(ast, str):
         return ast
     return "".join(unparse(token) for token in ast)
