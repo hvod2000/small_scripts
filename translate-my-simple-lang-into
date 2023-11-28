@@ -18,6 +18,17 @@ from itertools import groupby, islice
 from pathlib import Path
 
 
+def toml(line: str, lines):
+    match list(line.split()):
+        case ["[dependencies]"]:
+            yield line + "\n\n"
+            yield "[profile.release]\nlto = true\nstrip = true"
+        case ["#", *_]:
+            yield line.removeprefix("# ")
+        case _:
+            yield f"# {line}"
+
+
 def python(line: str, lines):
     match line.strip().split():
         case ():
@@ -224,6 +235,8 @@ def main(script_name: str, *script_args: str):
         handler = python
     elif lang == "cpp":
         handler = cpp
+    elif lang == "toml":
+        handler = toml
     else:
         print(f"Error: unknown language {lang}", file=sys.stderr)
         sys.exit(1)
