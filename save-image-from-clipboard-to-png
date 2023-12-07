@@ -1,0 +1,31 @@
+#!/bin/sh -e
+help_screen="Save image from clipboard into Desktop.
+
+Usage: {script} [options]
+
+Options:
+    -h, --help   Show this screen and exit.
+"
+
+
+if [ $# != 0 ]; then
+	script_name=$(basename $0)
+	printf "%s" "$help_screen" | sed "s/{script}/$script_name/g"
+	( [ "$1" = "-h" ] || [ "$1" = "--help" ] ) && exit 0 || exit 1
+fi
+
+path=~/Desktop/image.png
+if [ -f "$path" ]; then
+	time=$(date +"%Y-%m-%d %H:%M")
+	path=~/Pictures/Saved/"$time.png"
+fi
+echo "Saving $path..."
+mkdir -p "$(dirname "$path")"
+xclip -selection c -o -t image/png > "$path" 2> /dev/null || true
+if [ "$(head -n2 "$path" | base64)" = "iVBORw0KGgo=" ]; then
+	echo "[ OK ] $path"
+else
+	echo "Failure: image not found!"
+	rm "$path" || true
+	exit 1
+fi
