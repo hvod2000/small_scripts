@@ -1,0 +1,97 @@
+#!/usr/bin/env python3
+"""
+Filter png image.
+
+Usage: {script} EXPR [SOURCE] [TARGET]
+
+Arguments:
+    EXPR   - Experesion to calculate new pixel color
+             from its old red, green and blue values.
+    SOURCE - Path to the source file to be converted or to the
+             directory where all files are to be converted.
+             If not specified, use current directory.
+    TARGET - Path where to place generated content.
+             Default: beside the source.
+
+"""
+import sys
+from contextlib import suppress
+from pathlib import Path
+from PIL import Image
+
+
+SOURCE_SUFFIXES: set[str] = {".png", ".PNG"}
+SUFFIX: str = ".png"
+
+
+def convert(f, source_path: Path, target_path: Path):
+    sample = f(0.0, 0.0, 0.0, 0.0)
+    mode = len(sample) if isinstance(sample, tuple) else 1
+    mode_channels = ["L", "LA", "RGB", "RGBA"][mode - 1]
+    if not isinstance(sample, tuple):
+
+        def f(r, g, b, a, f=f):
+            return (f(r, g, b, a),)
+
+    with Image.open(source_path) as source_image:
+        w, h = source_image.size
+        target_image = Image.new(mode_channels, (w, h))
+        source = source_image.convert("RGBA").load()
+        target = target_image.load()
+        for y in range(h):
+            for x in range(w):
+                r, g, b, a = ((x / 255) ** (1 / 2.2) for x in source[x, y])
+                target[x, y] = tuple(round(x**2.2 * 255) for x in f(r, g, b, a))
+    print(target_path)
+    target_image.save(target_path)
+
+
+def parse_expression(expression: str):
+    # TODO
+    def parse_sum(i: int):
+        pass
+
+    def parse_product(i: int):
+        pass
+
+    def parse_function(i: int):
+        pass
+
+    def parse_parentheses(i: int):
+        pass
+
+    result, i = parse_sum(0)
+    if i == len(expression):
+        return result
+    raise i
+
+
+def main(script_name: str, *script_args: str):
+    doc = __doc__.format(script=Path(script_name).name)
+    args = __import__("docopt").docopt(doc, script_args)
+    path = Path(args["SOURCE"] or ".").resolve()
+
+    def f(r, g, b, a):
+        return eval(args["EXPR"])
+
+    if not path.is_dir():
+        target_path = Path(args["TARGET"] or path.with_suffix(SUFFIX)).resolve()
+        convert(f, path, target_path)
+        return
+    root, dirs, paths = path, [path], []
+    target_path = Path(args["TARGET"] or root).resolve()
+    for path in (p for dir in dirs for p in dir.iterdir()):
+        if path.stem.startswith("."):
+            continue
+        if path.is_dir():
+            dirs.append(path)
+        elif path.is_file() and path.suffix in SOURCE_SUFFIXES:
+            paths.append(path)
+    for path in paths:
+        target = path.with_suffix(SUFFIX)
+        convert(f, path, target / target_path.relative_to(root))
+
+
+if __name__ == "__main__":
+    with suppress(KeyboardInterrupt):
+        main(sys.argv[0], *sys.argv[1:])
