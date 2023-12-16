@@ -1,0 +1,31 @@
+#!/usr/bin/env python3
+"""
+Filter png image.
+
+Usage: {script} SPEED
+
+Arguments:
+    SPEED - Desired speed of time
+
+"""
+import sys
+from contextlib import suppress
+from pathlib import Path
+import time
+
+
+def main(script_name: str, *script_args: str):
+    doc = __doc__.format(script=Path(script_name).name)
+    args = __import__("docopt").docopt(doc, script_args)
+    ups = 1024
+    speed = float(args["SPEED"])
+    clock_id = time.CLOCK_REALTIME
+    while True:
+        t = time.clock_gettime(clock_id)
+        time.sleep(1 / ups)
+        time.clock_settime(clock_id, t + speed / ups)
+
+
+if __name__ == "__main__":
+    with suppress(KeyboardInterrupt):
+        main(sys.argv[0], *sys.argv[1:])
