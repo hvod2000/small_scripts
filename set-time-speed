@@ -13,17 +13,22 @@ from contextlib import suppress
 from pathlib import Path
 import time
 
+UPS = 64
+
 
 def main(script_name: str, *script_args: str):
     doc = __doc__.format(script=Path(script_name).name)
     args = __import__("docopt").docopt(doc, script_args)
-    ups = 1024
     speed = float(args["SPEED"])
     clock_id = time.CLOCK_REALTIME
+    t1 = time.clock_gettime(clock_id)
     while True:
-        t = time.clock_gettime(clock_id)
-        time.sleep(1 / ups)
-        time.clock_settime(clock_id, t + speed / ups)
+        time.sleep(1 / UPS)
+        t0, t1 = t1, time.clock_gettime(clock_id)
+        dt = t1 - t0
+        t1 = t0 + dt * speed
+        # print(f"{t0 = }\n{t1 = }\n{dt = }\n")
+        time.clock_settime(clock_id, t1)
 
 
 if __name__ == "__main__":
