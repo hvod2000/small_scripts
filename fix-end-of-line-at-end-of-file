@@ -9,6 +9,7 @@ Arguments:
                 If not specified, use current directory.
 
 Options:
+   --normalize  Replace CRLF with LF
    -h, --help   Show this screen and exit.
    --verbose    Raise verbosity level.
 """
@@ -21,12 +22,12 @@ debug: Callable[..., None]
 noop: Any = lambda *args, **kwargs: None
 
 
-def fix_eol(path: Path):
+def fix_eol(path: Path, normalize_endings: bool = False):
     debug(f"what is {path}?")
     if path.is_dir():
         debug(f"directory: {path}")
         for item in path.iterdir():
-            fix_eol(path.joinpath(item))
+            fix_eol(path.joinpath(item), normalize_endings)
     elif path.is_file():
         encoded_text = path.read_bytes()
         try:
@@ -34,6 +35,8 @@ def fix_eol(path: Path):
             encoded_text.decode("utf-8", "strict")
             if encoded_text and encoded_text[-1] != ord("\n"):
                 debug(f"fixing {path}")
+                if normalize_endings:
+                    encoded_text = encoded_text.replace(b"\r\n", b"\n")
                 path.write_bytes(encoded_text + b"\n")
                 print(f"fixed {path}")
         except UnicodeDecodeError:
@@ -46,7 +49,8 @@ def main(script_name: str, *script_args: str):
     args = __import__("docopt").docopt(doc, script_args)
     debug = print if args["--verbose"] else noop
     debug(f"Running with arguments {dict(args)!r}")
-    fix_eol(Path(args["PATH"] or ".").resolve())
+    normalize_endings = bool(args["--normalize"])
+    fix_eol(Path(args["PATH"] or ".").resolve(), normalize_endings)
 
 
 if __name__ == "__main__":
