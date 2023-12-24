@@ -13,7 +13,7 @@ from contextlib import suppress
 from pathlib import Path
 import time
 
-UPS = 64
+UPS = 128
 
 
 def main(script_name: str, *script_args: str):
