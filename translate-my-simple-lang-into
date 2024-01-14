@@ -18,6 +18,12 @@ from itertools import groupby, islice
 from pathlib import Path
 
 
+def plain_text(line: str, lines):
+    yield line
+    if line.startswith("> "):
+        yield eval(line[2:])
+
+
 def toml(line: str, lines):
     match list(line.split()):
         case ["[dependencies]"]:
@@ -237,6 +243,8 @@ def main(script_name: str, *script_args: str):
         handler = cpp
     elif lang == "toml":
         handler = toml
+    elif lang == "text":
+        handler = plain_text
     else:
         print(f"Error: unknown language {lang}", file=sys.stderr)
         sys.exit(1)
