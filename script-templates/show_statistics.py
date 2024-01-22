@@ -17,9 +17,7 @@ def main(script_name: str, *script_args: str):
     doc = __doc__.format(script=Path(script_name).name)
     if script_args:
         print(doc.lstrip())
-        if len(script_args) != 1 or script_args[0] not in ["-h", "--help"]:
-            exit(1)
-
+        exit(len(script_args) != 1 or script_args[0] not in ["-h", "--help"])
     pass
 
 
