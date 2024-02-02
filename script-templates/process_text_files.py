@@ -38,7 +38,7 @@ def main(script_name: str, *script_args: str):
     paths = [Path(args["PATH"] or ".")]
     for path in paths:
         if path.is_dir():
-            paths.extend(path.joinpath(f) for f in path.iterdir())
+            paths.extend(path.iterdir())
         elif path.is_file():
             debug(f"Processing {path}")
             try:
