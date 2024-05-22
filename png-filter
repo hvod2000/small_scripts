@@ -5,7 +5,7 @@ Filter png image.
 Usage: {script} EXPR [SOURCE] [TARGET]
 
 Arguments:
-    EXPR   - Experesion to calculate new pixel color
+    EXPR   - Expression to calculate new pixel color
              from its old red, green and blue values.
     SOURCE - Path to the source file to be converted or to the
              directory where all files are to be converted.
