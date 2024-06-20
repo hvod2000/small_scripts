@@ -1,0 +1,13 @@
+#!/usr/bin/env -S awk -i inplace -f
+
+BEGIN {
+	FS = OFS = "\t"
+}
+
+{
+	for (i = 1; i <= NF; i++) {
+		gsub(/^ +/, "", $i)
+		gsub(/ +$/, "", $i)
+	}
+	print
+}
