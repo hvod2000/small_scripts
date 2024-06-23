@@ -24,9 +24,9 @@ SUFFIXES = {
     "rs": lambda path, args: run(["rustc", "-C", "opt-level=3", "-o", path.with_suffix(""), "--", path]) and
                              run([path.with_suffix("")] + args),
     "js": lambda path, args: run(["node", path] + args),
-    "cpp": lambda path, args: run(["g++", "-Ofast", "-o", path.with_suffix(""), path]) and
+    "cpp": lambda path, args: run(["g++", "-Ofast", "-o", path.with_suffix(""), path, "-lSDL2", "-lSDL2_image"]) and
                               run([path.with_suffix("")] + args),
-    "c": lambda path, args: run(["gcc", "-Ofast", "-o", path.with_suffix(""), path]) and
+    "c": lambda path, args: run(["gcc", "-Ofast", "-o", path.with_suffix(""), path, "-lSDL2", "-lSDL2_image"]) and
                             run([path.with_suffix("")] + args),
     "cr": lambda path, args: run(["crystal", path]),
     "asm": lambda path, args:
