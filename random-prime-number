@@ -1,0 +1,36 @@
+#!/usr/bin/env python3
+"""
+Generate random prime number.
+
+Usage: {script} [options] [MINIMUM] [MAXIMUM]
+
+Arguments:
+    TEXT - Text to display.
+
+Options:
+    -h, --help
+        Show this screen and exit.
+    --hex
+        Print number in hexagonal representation.
+"""
+import random
+from sympy import isprime
+from pathlib import Path
+from contextlib import suppress
+import sys
+
+
+def main(script_name: str, *script_args: str):
+    doc = __doc__.format(script=Path(script_name).name)
+    args = __import__("docopt").docopt(doc, script_args)
+    minimum = int(eval(args["MINIMUM"] or "0"))
+    maximum = int(eval(args["MAXIMUM"] or "2**64-1"))
+    x = 0
+    while not isprime(x):
+        x = random.randint(minimum, maximum)
+    print(f"0x{x:X}" if args["--hex"] else x)
+
+
+if __name__ == "__main__":
+    with suppress(KeyboardInterrupt):
+        main(sys.argv[0], *sys.argv[1:])
