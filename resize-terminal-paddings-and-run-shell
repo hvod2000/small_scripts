@@ -20,4 +20,8 @@
 	done
 }&
 
-$SHELL
+if [ -z "$1" ]; then
+	$SHELL
+else
+	"$@"
+fi
