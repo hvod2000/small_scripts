@@ -1,0 +1,142 @@
+#!/usr/bin/env python3
+"""
+Convert tileset into blob format.
+
+Usage: {script} [options] SOURCE [TARGET]
+
+Arguments:
+    SOURCE - Path to the source file to be converted.
+             Should be in one of supported tileset formats.
+    TARGET - Path where to place generated content.
+             If not specified it will be put beside
+             the source, but with different extension.
+
+Options:
+    -h, --help
+        Show this screen and exit.
+"""
+import sys
+from functools import reduce
+from contextlib import suppress
+from pathlib import Path
+import PIL.Image
+from tilesets import BlobTileset
+# https://www.reddit.com/r/godot/comments/tpfrh3/you_only_need_13_tile_parts_build_a_3x3_minimal/
+
+MINIBLOB_TILES = [0, 16, 24, 8, 127, 64, 208, 248, 104, 251, 66, 214, 255, 107, 223, 2, 22, 31, 11, 254]
+BLOB_TILES = [
+    *[0, 2, 8, 10, 11, 16, 18, 22, 24, 26, 27, 30, 31, 64, 66, 72, 74, 75, 80],
+    *[82, 86, 88, 90, 91, 94, 95, 104, 106, 107, 120, 122, 123, 126, 127, 208],
+    *[210, 214, 216, 218, 219, 222, 223, 248, 250, 251, 254, 255],
+]
+
+
+def main(script_name: str, *script_args: str):
+    doc = __doc__.format(script=Path(script_name).name)
+    args = __import__("docopt").docopt(doc, script_args)
+    path = Path(args["SOURCE"]).resolve()
+    stem, suffix = (path.stem + "." * ("." not in path.stem)).rsplit(".", 1)
+    if suffix.lower() == "miniblob":
+        tileset, w, h = read_miniblob(path)
+    else:
+        raise Exception(f"I don't know what to do with {path}")
+    target = Path(args["TARGET"] or path.with_stem(stem + ".blob"))
+    write_blob(tileset, w, h, target)
+
+
+def read_miniblob(path: Path):
+    tiles, w, h = read_tiles(path, 5, 4)
+    tiles = dict(zip(MINIBLOB_TILES, tiles))
+    # for tile in BLOB_TILES:
+    #     if tile not in MINIBLOB_TILES:
+    #         parts = [ (foreground, back) for foreground in list(sorted(MINIBLOB_TILES)) for back in list(sorted(MINIBLOB_TILES)) if foreground | back == tile ] or [ (t1, t2, t3) for t1 in list(sorted(MINIBLOB_TILES)) for t2 in list(sorted(MINIBLOB_TILES)) for t3 in list(sorted(MINIBLOB_TILES)) if t1 | t2 | t3 == tile ]
+    #         parts = max(parts, key=(lambda p: tuple((bin(x).count("1"), -x) for x in p)))
+    #         tiles[tile] = reduce(blend, [tiles[tile] for tile in parts])
+    #         print(f"tiles[{tile}] =", reduce((lambda x, y: f"blend({x}, {y})"), [f"tiles[{t}]" for t in parts]))
+    tiles[10] = blend(tiles[2], tiles[8])
+    tiles[18] = blend(tiles[2], tiles[16])
+    tiles[26] = blend(tiles[24], tiles[2])
+    tiles[27] = blend(tiles[11], tiles[24])
+    tiles[30] = blend(tiles[22], tiles[24])
+    tiles[72] = blend(tiles[8], tiles[64])
+    tiles[74] = blend(tiles[66], tiles[8])
+    tiles[75] = blend(tiles[11], tiles[66])
+    tiles[80] = blend(tiles[16], tiles[64])
+    tiles[82] = blend(tiles[66], tiles[16])
+    tiles[86] = blend(tiles[22], tiles[66])
+    tiles[88] = blend(tiles[24], tiles[64])
+    tiles[90] = blend(tiles[24], tiles[66])
+    tiles[91] = blend(blend(tiles[11], tiles[24]), tiles[66])
+    tiles[94] = blend(blend(tiles[22], tiles[24]), tiles[66])
+    tiles[95] = blend(tiles[31], tiles[66])
+    tiles[106] = blend(tiles[104], tiles[66])
+    tiles[120] = blend(tiles[104], tiles[24])
+    tiles[122] = blend(blend(tiles[104], tiles[24]), tiles[66])
+    tiles[123] = blend(tiles[107], tiles[24])
+    tiles[126] = blend(tiles[22], tiles[104])
+    # tiles[127] = blend(tiles[22], tiles[107])
+    tiles[210] = blend(tiles[208], tiles[66])
+    tiles[216] = blend(tiles[208], tiles[24])
+    tiles[218] = blend(blend(tiles[208], tiles[24]), tiles[66])
+    tiles[219] = blend(tiles[11], tiles[208])
+    tiles[222] = blend(tiles[214], tiles[24])
+    # tiles[223] = blend(tiles[31], tiles[214])
+    tiles[250] = blend(tiles[248], tiles[66])
+    # tiles[251] = blend(tiles[107], tiles[248])
+    # tiles[254] = blend(tiles[214], tiles[248])
+    return dict(sorted(tiles.items())), w, h
+
+
+def read_tiles(path: Path, columns: int, rows: int):
+    img = PIL.Image.open(path).convert("RGBA")
+    w = img.size[0] // columns
+    h = img.size[1] // rows
+    pixels = img.load()
+    tiles = [
+        [
+            pixels[x, y]
+            for y in reversed(range(tile_y * h, (tile_y + 1) * h))
+            for x in range(tile_x * w, (tile_x + 1) * w)
+        ]
+        for tile_y in reversed(range(rows))
+        for tile_x in range(columns)
+    ]
+    return tiles, w, h
+
+
+RGBA = tuple[int, int, int, int]
+
+
+def write_blob(tileset: dict[int, list[RGBA]], w: int, h: int, path: Path):
+    image = PIL.Image.new(mode="RGBA", size=(7 * w, 7 * h))
+    blob_order = [
+        *[-1, 18, 30, 31, 27, 26, 10],
+        *[2, 82, 222, 251, 122, 90, 74],
+        *[86, 91, 218, 104, 80, 94, 75],
+        *[210, 126, 95, 11, 22, 223, 107],
+        *[66, 214, 255, 127, 219, 250, 106],
+        *[64, 208, 248, 254, 123, 88, 72],
+        *[0, 16, 24, 216, 120, 8, -1],
+    ]
+    for i, tile in enumerate(blob_order):
+        if tile < 0:
+            continue
+        tile_y, tile_x = divmod(i, 7)
+        for j, pixel in enumerate(tileset[tile]):
+            x = tile_x * w + j % w
+            y = (tile_y + 1) * h - 1 - j // w
+            image.putpixel((x, y), pixel)
+    image.save(path)
+
+
+def blend(foreground: list[RGBA], background: list[RGBA]):
+    # TODO: correct blend
+    return [
+        (r, g, b, a) if a > 127 else (br, bg, bb, ba)
+        for ((r, g, b, a), (br, bg, bb, ba)) in zip(foreground, background)
+    ]
+
+
+if __name__ == "__main__":
+    with suppress(KeyboardInterrupt):
+        main(sys.argv[0], *sys.argv[1:])
