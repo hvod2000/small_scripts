@@ -1,0 +1,5 @@
+#!/bin/sh -e
+
+export SHELL=fish
+cd "$(xdg-user-dir DESKTOP)" || true
+alacritty -e resize-terminal-paddings-and-run-shell nvim notes.md
