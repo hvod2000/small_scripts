@@ -1,0 +1,226 @@
+#!/usr/bin/env python3
+"""
+Convert WAT to WASM.
+
+Usage: {script} [options] WAT [WASM]
+
+Arguments:
+    WAT  - Source code in WAT format.
+    WASM - Path where to place generated WASM module.
+
+Options:
+    -h, --help
+        Show this screen and exit.
+"""
+# Potential name: Walter
+import sys
+from ast import literal_eval
+from contextlib import suppress
+from pathlib import Path
+
+DEBUG = False
+INSTRUCTIONS = {"i32.const", "call"}
+IDENTIFIER_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-$"
+
+
+def main(script_name: str, *script_args: str):
+    doc = __doc__.format(script=Path(script_name).name)
+    args = __import__("docopt").docopt(doc, script_args)
+    wat_path = Path(args["WAT"]).resolve()
+    if args["WASM"]:
+        wasm_path = Path(args["WASM"])
+    else:
+        wasm_path = wat_path.with_suffix(".wasm")
+    wasm = assemble(parse(wat_path.read_text()))
+    if DEBUG:
+        print("Total module size:", len(wasm))
+    wasm_path.write_bytes(wasm)
+
+
+def assemble(ast: list) -> bytes:
+    wasm = bytearray()
+    types, imports, exports, funcs = split_into_sections(ast)
+
+    def section(typ: int, data: bytes):
+        if DEBUG:
+            data_repr = data.hex(" ") + " : " + data.decode("utf-8", "ignore")
+            print(f"Section#{typ:X}({len(wasm):02}):", data_repr)
+        assert len(data) < 128
+        wasm.extend([typ, len(data)])
+        wasm.extend(data)
+
+    # https://webassembly.github.io/spec/core/binary/modules.html#binary-module
+    wasm.extend(b"\0asm")  # Magic
+    wasm.extend((1).to_bytes(4, "little"))  # Version
+    section(1, pack([pack_type(t) for t in types]))  # Type section
+    section(2, pack([pack_import(imp, funcs, types) for imp in imports.items()]))  # Import section
+    funcs = {f: body for f, body in funcs.items() if f not in imports}
+    section(3, pack([bytes([types.index(t)]) for t, _ in funcs.values()]))  # Function section
+    section(7, pack([pack_export(exp, funcs, types) for exp in exports.items()]))  # Export section
+    section(10, pack([pack_func(f, imports, funcs, types) for f in funcs.values()]))  # Code section
+    return wasm
+
+
+def parse(source: str) -> list:
+    i: int = 0
+    node = []
+    node_stack = []
+    while i < len(source):
+        if source[i] == "(":
+            node_stack.append(node)
+            node.append([])
+            node = node[-1]
+            i += 1
+        elif source[i] == ")":
+            node = node_stack.pop()
+            i += 1
+        elif source[i].isspace():
+            i += 1
+        elif source[i] in IDENTIFIER_CHARS:
+            j, i = i, i + 1
+            while i < len(source) and source[i] in IDENTIFIER_CHARS:
+                i += 1
+            node.append(parse_literal(source[j:i]))
+        elif source[i] == '"':
+            j, i = i, i + 1
+            while i < len(source) and source[i] != '"':
+                i += 1
+            node.append(source[j + 1: i])
+            i += 1
+        else:
+            error(f"unexpected character: {source[i]}")
+            i += 1
+    assert len(node_stack) == 0 and len(node) == 1
+    node = node[0]
+    if DEBUG:
+        print("AST:", node)
+    return node
+
+
+def pack(elements: list[bytes]) -> bytes:
+    return bytes([len(elements)]) + b"".join(elements)
+
+
+def pack_func(f: tuple[tuple, list], imps: dict[str], funcs: dict[str], types: list[tuple]) -> bytes:
+    typ, body = f
+    binary = bytearray(b"\0")
+    for instr in body:
+        op, *args = instr
+        if op == "call":
+            f = args[0]
+            i = (len(imps) + list(funcs).index(f)) if f in funcs else list(imps).index(f)
+            binary.extend([0x10, i])
+        elif op == "i32.const":
+            binary.extend(bytes([0x41]) + pack_i32(args[0]))
+        else:
+            error(f"unsupported instruction {instr}")
+    binary += b"\x0B"
+    return pack([binary[i: i + 1] for i in range(len(binary))])
+
+
+def pack_i32(number: int) -> bytes:
+    assert -64 <= number < 64
+    if number < 0:
+        number += 128
+    return bytes([number])
+
+
+def pack_import(imprt: tuple[str, str, str], fs: dict[str], types: dict[str]) -> bytes:
+    f, (module, name) = imprt
+    return pack_name(module) + pack_name(name) + bytes([0x00, types.index(fs[f][0])])
+
+
+def pack_export(export: tuple[str, str, str], fs: dict[str], types: dict[str]) -> bytes:
+    f, name = export
+    return pack_name(name) + bytes([0x00, types.index(fs[f][0])])
+
+
+def pack_name(name: str) -> bytes:
+    name = name.encode("utf-8")
+    return bytes([len(name)]) + name
+
+
+def pack_type(function_type: tuple[tuple, tuple]) -> bytes:
+    parameters, results = function_type
+    return (
+        bytes([0x60])
+        + pack([pack_valtype(param) for param in parameters])
+        + pack([pack_valtype(result) for result in results])
+    )
+
+
+def pack_valtype(value_type: str) -> bytes:
+    if value_type == "i32":
+        return bytes([0x7F])
+    if value_type == "i64":
+        return bytes([0x7E])
+    if value_type == "f32":
+        return bytes([0x7D])
+    if value_type == "f64":
+        return bytes([0x7C])
+    error(f"unsupported valtype {value_type}")
+    return b""
+
+
+def split_into_sections(ast: list):
+    imports = {}
+    exports = {}
+    functions = {}
+    assert ast[0] == "module"
+    for definition in ast[1:]:
+        match definition:
+            case "func", *func_data:
+                i = 0
+                name = f"F#{len(functions)}"
+                params, result = [], []
+                while i < len(func_data):
+                    if func_data[i][0] == "$":
+                        name = func_data[i]
+                    elif func_data[i][0] == "import":
+                        imports[name] = func_data[i][1:]
+                    elif func_data[i][0] == "export":
+                        exports[name] = func_data[i][1]
+                    elif func_data[i][0] == "result":
+                        result = func_data[i][1:]
+                    elif func_data[i][0] == "param":
+                        params = func_data[i][1:]
+                    else:
+                        break
+                    i += 1
+                body = parse_instructions(func_data[i:])
+                if DEBUG:
+                    print("fn", name, body)
+                functions[name] = ((tuple(params), tuple(result)), body)
+            case unknown:
+                error(f"unsupported {unknown}")
+    types = list({typ for typ, _ in functions.values()})
+    return types, imports, exports, functions
+
+
+def parse_instructions(words: list) -> list[list]:
+    instructions = []
+    for word in words:
+        if word in INSTRUCTIONS:
+            instructions.append([word])
+        else:
+            instructions[-1].append(word)
+    return instructions
+
+
+def parse_literal(source: str):
+    try:
+        return literal_eval(source)
+    except (ValueError, SyntaxError):
+        return source
+
+
+def error(message):
+    message = "Error: " + message
+    if sys.stderr.isatty():
+        message = "\x1b[91m" + message + "\x1b[0m"
+    print(message, file=sys.stderr)
+
+
+if __name__ == "__main__":
+    with suppress(KeyboardInterrupt):
+        main(sys.argv[0], *sys.argv[1:])
