@@ -1,0 +1,79 @@
+#!/usr/bin/env python3
+"""
+Create a new Git repository.
+
+Usage: {script} [options]
+
+Options:
+    -h, --help
+        Show this screen and exit.
+"""
+import sys
+from os import system, environ
+from contextlib import suppress
+from pathlib import Path
+
+TEMPLATES = Path(__file__).resolve().parent / "templates"
+EDITOR = environ["EDITOR"] or "vi"
+
+
+def main(script_name: str, *script_args: str):
+    doc = __doc__.format(script=Path(script_name).name)
+    __import__("docopt").docopt(doc, script_args)
+    if Path(".git").is_dir():
+        panic("this directory is already a Git repository")
+    cmd("git init")
+    cmd("git commit --allow-empty -m'Initial commit'")
+    add_readme()
+    if "cargo" in Path("readme.md").read_text():
+        add_cargo()
+    add_editor_config()
+    cmd("git log --oneline")
+
+
+def add_readme():
+    if not Path("readme.md").exists():
+        template = TEMPLATES / "readme.md"
+        title = Path.cwd().absolute().name.replace("-", " ").capitalize()
+        template_text = template.read_text().replace("TITLE", title)
+        Path("readme.md").write_text(template_text)
+    cmd(f"{EDITOR} readme.md")
+    cmd("git add readme.md")
+    cmd("git commit -m'Add readme.md'")
+
+
+def add_cargo():
+    cmd("cargo init --bin -q")
+    cmd("git add Cargo.toml src/main.rs .gitignore")
+    cmd("git commit -m'Add cargo package'")
+
+
+def add_editor_config():
+    editorconfig = (TEMPLATES / "editorconfig").read_text()
+    Path(".editorconfig").write_text(editorconfig)
+    cmd("git add .editorconfig")
+    cmd("git commit -m'Add .editorconfig'")
+
+
+def cmd(command):
+    # msg = f"─$ {command}"
+    # if sys.stdout.isatty():
+    #     msg = "\x1b[94m" + msg + "\x1b[0m"
+    # print(msg)
+    if system(command) != 0:
+        panic(f"failed to execute this command:\n     $ {command}")
+
+
+def panic(message: str):
+    if "\n" not in message:
+        message += "."
+    if sys.stderr.isatty():
+        print(f"\x1b[91mError: {message}\x1b[0m", file=sys.stderr)
+    else:
+        print(f"Error: {message}", file=sys.stderr)
+    exit(1)
+
+
+if __name__ == "__main__":
+    with suppress(KeyboardInterrupt):
+        main(sys.argv[0], *sys.argv[1:])
